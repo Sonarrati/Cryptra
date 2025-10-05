@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Videos - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Watch Videos & Earn</h1>
+            <p>Watch short videos and earn 500-1000 coins per video</p>
+        </div>
+
+        <div class="video-stats">
+            <div class="stat-item">
+                <h3 id="videosWatched">0</h3>
+                <p>Videos Watched Today</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="coinsEarned">0</h3>
+                <p>Coins Earned Today</p>
+            </div>
+            <div class="stat-item">
+                <h3>10</h3>
+                <p>Daily Limit</p>
+            </div>
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <h3>Ready to Watch</h3>
+                <p>Click the button below to start watching and earning coins</p>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button class="btn btn-primary btn-large" onclick="watchVideo()" id="watchBtn">
+                <i class="fas fa-play"></i> Watch Video & Earn Coins
+            </button>
+            <p class="note">You can watch up to 10 videos per day. Each video earns 500-1000 coins.</p>
+        </div>
+
+        <div class="video-list">
+            <h3>Available Videos</h3>
+            <div class="videos-grid">
+                <div class="video-item">
+                    <div class="video-thumbnail">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="video-info">
+                        <h4>Tech Review</h4>
+                        <p>2:30 • 750 coins</p>
+                    </div>
+                </div>
+                <div class="video-item">
+                    <div class="video-thumbnail">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="video-info">
+                        <h4>Travel Guide</h4>
+                        <p>1:45 • 600 coins</p>
+                    </div>
+                </div>
+                <div class="video-item">
+                    <div class="video-thumbnail">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="video-info">
+                        <h4>Cooking Tutorial</h4>
+                        <p>3:15 • 900 coins</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let videosWatchedToday = 0;
+        let coinsEarnedToday = 0;
+
+        async function loadVideoStats() {
+            // Load from localStorage for demo
+            const today = new Date().toDateString();
+            const stats = JSON.parse(localStorage.getItem(`video_stats_${today}`) || '{"count": 0, "coins": 0}');
+            
+            videosWatchedToday = stats.count;
+            coinsEarnedToday = stats.coins;
+            
+            document.getElementById('videosWatched').textContent = videosWatchedToday;
+            document.getElementById('coinsEarned').textContent = utils.formatCoins(coinsEarnedToday);
+            
+            // Update button if limit reached
+            if (videosWatchedToday >= 10) {
+                document.getElementById('watchBtn').disabled = true;
+                document.getElementById('watchBtn').innerHTML = '<i class="fas fa-check"></i> Daily Limit Reached';
+            }
+        }
+
+        async function watchVideo() {
+            if (videosWatchedToday >= 10) {
+                utils.showNotification('Daily video limit reached! Come back tomorrow.', 'warning');
+                return;
+            }
+
+            // Show loading state
+            const watchBtn = document.getElementById('watchBtn');
+            watchBtn.disabled = true;
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Playing Video...';
+
+            // Simulate video playback
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Calculate random reward
+            const reward = utils.randomInRange(500, 1000);
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Update user balance
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('wallet_balance')
+                    .eq('id', user.id)
+                    .single();
+
+                const newBalance = userData.wallet_balance + reward;
+
+                await supabase
+                    .from('users')
+                    .update({ wallet_balance: newBalance })
+                    .eq('id', user.id);
+
+                // Record transaction
+                await supabase
+                    .from('coin_transactions')
+                    .insert([
+                        {
+                            user_id: user.id,
+                            source_type: 'video',
+                            coins_amount: reward,
+                            balance_after: newBalance
+                        }
+                    ]);
+
+                // Update local stats
+                videosWatchedToday++;
+                coinsEarnedToday += reward;
+                
+                const today = new Date().toDateString();
+                localStorage.setItem(`video_stats_${today}`, JSON.stringify({
+                    count: videosWatchedToday,
+                    coins: coinsEarnedToday
+                }));
+
+                // Update UI
+                document.getElementById('videosWatched').textContent = videosWatchedToday;
+                document.getElementById('coinsEarned').textContent = utils.formatCoins(coinsEarnedToday);
+                
+                utils.showNotification(`You earned ${reward} coins from watching the video!`, 'success');
+
+                // Reset button
+                if (videosWatchedToday < 10) {
+                    watchBtn.disabled = false;
+                    watchBtn.innerHTML = '<i class="fas fa-play"></i> Watch Video & Earn Coins';
+                } else {
+                    watchBtn.innerHTML = '<i class="fas fa-check"></i> Daily Limit Reached';
+                }
+
+            } catch (error) {
+                console.error('Error processing video reward:', error);
+                utils.showNotification('Error processing reward', 'error');
+                watchBtn.disabled = false;
+                watchBtn.innerHTML = '<i class="fas fa-play"></i> Watch Video & Earn Coins';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadVideoStats);
+
+        // Add CSS for video page
+        const videoStyles = `
+            .page-header {
+                text-align: center;
+                margin: 2rem 0 3rem;
+            }
+
+            .page-header h1 {
+                font-size: 2.5rem;
+                margin-bottom: 1rem;
+                color: var(--text);
+            }
+
+            .page-header p {
+                font-size: 1.2rem;
+                color: var(--text-light);
+            }
+
+            .video-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+
+            .stat-item {
+                background: var(--card-bg);
+                padding: 1.5rem;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: var(--shadow);
+            }
+
+            .stat-item h3 {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-item p {
+                color: var(--text-light);
+            }
+
+            .video-container {
+                background: var(--card-bg);
+                border-radius: 12px;
+                padding: 3rem;
+                text-align: center;
+                margin: 2rem 0;
+                box-shadow: var(--shadow);
+            }
+
+            .video-placeholder i {
+                font-size: 4rem;
+                color: var(--primary);
+                margin-bottom: 1rem;
+            }
+
+            .video-placeholder h3 {
+                margin-bottom: 1rem;
+                color: var(--text);
+            }
+
+            .video-placeholder p {
+                color: var(--text-light);
+            }
+
+            .action-section {
+                text-align: center;
+                margin: 2rem 0;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .note {
+                margin-top: 1rem;
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            .video-list {
+                margin: 3rem 0;
+            }
+
+            .video-list h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .videos-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+
+            .video-item {
+                background: var(--card-bg);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .video-thumbnail {
+                height: 120px;
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 2rem;
+            }
+
+            .video-info {
+                padding: 1rem;
+            }
+
+            .video-info h4 {
+                margin-bottom: 0.5rem;
+                color: var(--text);
+            }
+
+            .video-info p {
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            @media (max-width: 768px) {
+                .page-header h1 {
+                    font-size: 2rem;
+                }
+
+                .video-stats {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = videoStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
