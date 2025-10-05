@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Box - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Treasure Box</h1>
+            <p>Open treasure boxes to win 2000-5000 coins!</p>
+        </div>
+
+        <div class="treasure-stats">
+            <div class="stat-item">
+                <h3 id="boxesOpened">0</h3>
+                <p>Boxes Opened</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="totalTreasure">0</h3>
+                <p>Total Treasure</p>
+            </div>
+            <div class="stat-item">
+                <h3>1</h3>
+                <p>Weekly Limit</p>
+            </div>
+        </div>
+
+        <div class="treasure-container">
+            <div class="treasure-box" id="treasureBox">
+                <div class="box-lid" id="boxLid">
+                    <div class="box-gem">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="treasure-content" id="treasureContent">
+                        <div class="treasure-prize" id="treasurePrize">0</div>
+                        <p class="prize-text">Coins Found!</p>
+                        <button class="btn btn-accent" onclick="claimTreasure()" id="claimTreasureBtn" style="display: none;">
+                            Claim Treasure
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button class="btn btn-primary btn-large" onclick="openTreasureBox()" id="openBtn">
+                <i class="fas fa-gem"></i> Open Treasure Box
+            </button>
+            <p class="note">You can open one treasure box per week. Each box contains 2000-5000 coins.</p>
+        </div>
+
+        <div class="treasure-history">
+            <h3>Treasure History</h3>
+            <div class="history-list" id="treasureHistory">
+                <div class="history-item">No treasure opened yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let boxesOpened = 0;
+        let totalTreasure = 0;
+        let currentTreasure = 0;
+        let canOpenBox = true;
+
+        async function loadTreasureStats() {
+            const thisWeek = getWeekNumber(new Date());
+            const stats = JSON.parse(localStorage.getItem(`treasure_stats_${thisWeek}`) || '{"opened": false, "amount": 0}');
+            
+            canOpenBox = !stats.opened;
+            boxesOpened = stats.opened ? 1 : 0;
+            totalTreasure = stats.amount;
+            
+            document.getElementById('boxesOpened').textContent = boxesOpened;
+            document.getElementById('totalTreasure').textContent = utils.formatCoins(totalTreasure);
+            
+            if (!canOpenBox) {
+                document.getElementById('openBtn').disabled = true;
+                document.getElementById('openBtn').innerHTML = '<i class="fas fa-check"></i> Opened This Week';
+            }
+
+            loadTreasureHistory();
+        }
+
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        function openTreasureBox() {
+            if (!canOpenBox) {
+                utils.showNotification('You have already opened a treasure box this week!', 'warning');
+                return;
+            }
+
+            // Generate random treasure
+            currentTreasure = utils.randomInRange(2000, 5000);
+            
+            // Animate box opening
+            const boxLid = document.getElementById('boxLid');
+            const treasureContent = document.getElementById('treasureContent');
+            const claimBtn = document.getElementById('claimTreasureBtn');
+            
+            boxLid.style.transform = 'rotateX(-110deg)';
+            boxLid.style.transition = 'transform 1s ease-in-out';
+            
+            setTimeout(() => {
+                treasureContent.innerHTML = `
+                    <div class="treasure-prize">${utils.formatCoins(currentTreasure)}</div>
+                    <p class="prize-text">Coins Found!</p>
+                `;
+                claimBtn.style.display = 'block';
+                
+                // Add sparkle effect
+                addSparkles();
+                
+            }, 1000);
+
+            utils.showNotification('Treasure box opened! Claim your reward.', 'info');
+        }
+
+        function addSparkles() {
+            const treasureBox = document.getElementById('treasureBox');
+            
+            for (let i = 0; i < 10; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.cssText = `
+                    position: absolute;
+                    width: 4px;
+                    height: 4px;
+                    background: gold;
+                    border-radius: 50%;
+                    animation: sparkle 1s ease-out forwards;
+                    top: ${Math.random() * 100}%;
+                    left: ${Math.random() * 100}%;
+                `;
+                treasureBox.appendChild(sparkle);
+                
+                setTimeout(() => sparkle.remove(), 1000);
+            }
+        }
+
+        async function claimTreasure() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Update user balance
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('wallet_balance')
+                    .eq('id', user.id)
+                    .single();
+
+                const newBalance = userData.wallet_balance + currentTreasure;
+
+                await supabase
+                    .from('users')
+                    .update({ wallet_balance: newBalance })
+                    .eq('id', user.id);
+
+                // Record transaction
+                await supabase
+                    .from('coin_transactions')
+                    .insert([
+                        {
+                            user_id: user.id,
+                            source_type: 'treasure',
+                            coins_amount: currentTreasure,
+                            balance_after: newBalance
+                        }
+                    ]);
+
+                // Update stats
+                boxesOpened = 1;
+                totalTreasure = currentTreasure;
+                canOpenBox = false;
+                
+                const thisWeek = getWeekNumber(new Date());
+                localStorage.setItem(`treasure_stats_${thisWeek}`, JSON.stringify({
+                    opened: true,
+                    amount: currentTreasure
+                }));
+
+                // Update UI
+                document.getElementById('boxesOpened').textContent = boxesOpened;
+                document.getElementById('totalTreasure').textContent = utils.formatCoins(totalTreasure);
+                document.getElementById('openBtn').disabled = true;
+                document.getElementById('openBtn').innerHTML = '<i class="fas fa-check"></i> Opened This Week';
+                
+                // Add to history
+                addToTreasureHistory(currentTreasure);
+                
+                utils.showNotification(`Amazing! You found ${utils.formatCoins(currentTreasure)} coins in the treasure!`, 'success');
+
+            } catch (error) {
+                console.error('Error claiming treasure:', error);
+                utils.showNotification('Error claiming treasure', 'error');
+            }
+        }
+
+        function addToTreasureHistory(amount) {
+            const historyList = document.getElementById('treasureHistory');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <div class="history-icon">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <div class="history-details">
+                    <div class="history-description">Treasure Box</div>
+                    <div class="history-date">${new Date().toLocaleDateString()}</div>
+                </div>
+                <div class="history-amount">+${utils.formatCoins(amount)}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            
+            // Keep only last 5 items
+            if (historyList.children.length > 5) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+
+        function loadTreasureHistory() {
+            // Load from localStorage for demo
+            const history = JSON.parse(localStorage.getItem('treasure_history') || '[]');
+            const historyList = document.getElementById('treasureHistory');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-item">No treasure opened yet</div>';
+                return;
+            }
+
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <div class="history-details">
+                        <div class="history-description">Treasure Box</div>
+                        <div class="history-date">${item.date}</div>
+                    </div>
+                    <div class="history-amount">+${utils.formatCoins(item.amount)}</div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTreasureStats);
+
+        // Add treasure box styles
+        const treasureStyles = `
+            .treasure-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+
+            .stat-item {
+                background: var(--card-bg);
+                padding: 1.5rem;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: var(--shadow);
+            }
+
+            .stat-item h3 {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-item p {
+                color: var(--text-light);
+            }
+
+            .treasure-container {
+                display: flex;
+                justify-content: center;
+                margin: 3rem 0;
+                perspective: 1000px;
+            }
+
+            .treasure-box {
+                width: 200px;
+                height: 150px;
+                position: relative;
+                transform-style: preserve-3d;
+            }
+
+            .box-lid {
+                width: 200px;
+                height: 30px;
+                background: linear-gradient(45deg, #d97706, #f59e0b);
+                position: absolute;
+                top: 0;
+                transform-origin: bottom;
+                transform: rotateX(0deg);
+                transition: transform 1s ease-in-out;
+                border-radius: 8px 8px 0 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            }
+
+            .box-gem {
+                width: 30px;
+                height: 30px;
+                background: gold;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #d97706;
+                font-size: 1.2rem;
+                box-shadow: 0 0 10px gold;
+            }
+
+            .box-body {
+                width: 200px;
+                height: 120px;
+                background: linear-gradient(45deg, #b45309, #d97706);
+                position: absolute;
+                bottom: 0;
+                border-radius: 0 0 8px 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            }
+
+            .treasure-content {
+                text-align: center;
+                color: white;
+            }
+
+            .treasure-prize {
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            }
+
+            .prize-text {
+                font-size: 1.1rem;
+                opacity: 0.9;
+                margin-bottom: 1rem;
+            }
+
+            .action-section {
+                text-align: center;
+                margin: 2rem 0;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .note {
+                margin-top: 1rem;
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            .treasure-history {
+                margin: 3rem 0;
+            }
+
+            .treasure-history h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .history-list {
+                background: var(--card-bg);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .history-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .history-item:last-child {
+                border-bottom: none;
+            }
+
+            .history-icon {
+                width: 40px;
+                height: 40px;
+                background: var(--accent);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                margin-right: 1rem;
+            }
+
+            .history-details {
+                flex: 1;
+            }
+
+            .history-description {
+                font-weight: 500;
+                margin-bottom: 0.25rem;
+            }
+
+            .history-date {
+                font-size: 0.8rem;
+                color: var(--text-light);
+            }
+
+            .history-amount {
+                font-weight: 600;
+                color: var(--secondary);
+            }
+
+            @keyframes sparkle {
+                0% {
+                    transform: scale(0) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(3) rotate(180deg);
+                    opacity: 0;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .treasure-box {
+                    width: 180px;
+                    height: 135px;
+                }
+
+                .box-lid, .box-body {
+                    width: 180px;
+                }
+
+                .treasure-prize {
+                    font-size: 2rem;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = treasureStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
