@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Cards - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Scratch & Win</h1>
+            <p>Scratch daily cards to win 1000-3000 coins instantly!</p>
+        </div>
+
+        <div class="scratch-stats">
+            <div class="stat-item">
+                <h3 id="cardsScratched">0</h3>
+                <p>Cards Today</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="totalWinnings">0</h3>
+                <p>Total Winnings</p>
+            </div>
+            <div class="stat-item">
+                <h3>3</h3>
+                <p>Daily Limit</p>
+            </div>
+        </div>
+
+        <div class="scratch-container">
+            <div class="scratch-card" id="scratchCard">
+                <div class="scratch-overlay" id="scratchOverlay">
+                    <div class="scratch-instruction">
+                        <i class="fas fa-hand-pointer"></i>
+                        <p>Scratch to reveal your prize!</p>
+                    </div>
+                </div>
+                <div class="scratch-content" id="scratchContent">
+                    <div class="prize-amount" id="prizeAmount">0</div>
+                    <p class="prize-text">Coins Won!</p>
+                    <button class="btn btn-accent" onclick="claimPrize()" id="claimBtn" style="display: none;">
+                        Claim Prize
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button class="btn btn-primary btn-large" onclick="generateScratchCard()" id="generateBtn">
+                <i class="fas fa-scroll"></i> Generate Scratch Card
+            </button>
+            <p class="note">You can scratch up to 3 cards per day. Each card wins 1000-3000 coins.</p>
+        </div>
+
+        <div class="scratch-history">
+            <h3>Recent Wins</h3>
+            <div class="history-list" id="scratchHistory">
+                <div class="history-item">No recent scratches</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let cardsScratchedToday = 0;
+        let totalWinningsToday = 0;
+        let currentPrize = 0;
+        let isScratching = false;
+
+        async function loadScratchStats() {
+            const today = new Date().toDateString();
+            const stats = JSON.parse(localStorage.getItem(`scratch_stats_${today}`) || '{"count": 0, "winnings": 0}');
+            
+            cardsScratchedToday = stats.count;
+            totalWinningsToday = stats.winnings;
+            
+            document.getElementById('cardsScratched').textContent = cardsScratchedToday;
+            document.getElementById('totalWinnings').textContent = utils.formatCoins(totalWinningsToday);
+            
+            if (cardsScratchedToday >= 3) {
+                document.getElementById('generateBtn').disabled = true;
+                document.getElementById('generateBtn').innerHTML = '<i class="fas fa-check"></i> Daily Limit Reached';
+            }
+
+            loadScratchHistory();
+        }
+
+        function generateScratchCard() {
+            if (cardsScratchedToday >= 3) {
+                utils.showNotification('Daily scratch card limit reached!', 'warning');
+                return;
+            }
+
+            // Generate random prize
+            currentPrize = utils.randomInRange(1000, 3000);
+            
+            // Reset scratch card
+            const scratchOverlay = document.getElementById('scratchOverlay');
+            const scratchContent = document.getElementById('scratchContent');
+            const claimBtn = document.getElementById('claimBtn');
+            
+            scratchOverlay.style.display = 'block';
+            scratchContent.innerHTML = `
+                <div class="prize-amount">${utils.formatCoins(currentPrize)}</div>
+                <p class="prize-text">Coins Won!</p>
+            `;
+            claimBtn.style.display = 'none';
+            
+            // Initialize scratch functionality
+            initScratchCard();
+            
+            utils.showNotification('Scratch card generated! Scratch to reveal your prize.', 'info');
+        }
+
+        function initScratchCard() {
+            const overlay = document.getElementById('scratchOverlay');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+
+            // Set canvas size
+            canvas.width = overlay.offsetWidth;
+            canvas.height = overlay.offsetHeight;
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.cursor = 'pointer';
+
+            // Fill with scratch texture
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add scratch pattern
+            ctx.fillStyle = '#94a3b8';
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 2, 20);
+                ctx.fillRect(x, y, 20, 2);
+            }
+
+            overlay.innerHTML = '';
+            overlay.appendChild(canvas);
+
+            // Scratch functionality
+            canvas.addEventListener('mousedown', startScratching);
+            canvas.addEventListener('touchstart', startScratching);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('touchmove', scratch);
+            canvas.addEventListener('mouseup', stopScratching);
+            canvas.addEventListener('touchend', stopScratching);
+
+            function startScratching(e) {
+                isDrawing = true;
+                scratch(e);
+            }
+
+            function scratch(e) {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                
+                // Clear a circle around the cursor
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Check if enough is scratched to reveal
+                checkReveal();
+            }
+
+            function stopScratching() {
+                isDrawing = false;
+            }
+
+            function checkReveal() {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+                let transparentCount = 0;
+                
+                for (let i = 3; i < pixels.length; i += 4) {
+                    if (pixels[i] === 0) transparentCount++;
+                }
+                
+                const percentScratched = (transparentCount / (pixels.length / 4)) * 100;
+                
+                if (percentScratched > 50) {
+                    // Prize revealed
+                    overlay.style.display = 'none';
+                    document.getElementById('claimBtn').style.display = 'block';
+                    isScratching = false;
+                }
+            }
+        }
+
+        async function claimPrize() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Update user balance
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('wallet_balance')
+                    .eq('id', user.id)
+                    .single();
+
+                const newBalance = userData.wallet_balance + currentPrize;
+
+                await supabase
+                    .from('users')
+                    .update({ wallet_balance: newBalance })
+                    .eq('id', user.id);
+
+                // Record transaction
+                await supabase
+                    .from('coin_transactions')
+                    .insert([
+                        {
+                            user_id: user.id,
+                            source_type: 'scratch',
+                            coins_amount: currentPrize,
+                            balance_after: newBalance
+                        }
+                    ]);
+
+                // Update stats
+                cardsScratchedToday++;
+                totalWinningsToday += currentPrize;
+                
+                const today = new Date().toDateString();
+                localStorage.setItem(`scratch_stats_${today}`, JSON.stringify({
+                    count: cardsScratchedToday,
+                    winnings: totalWinningsToday
+                }));
+
+                // Update UI
+                document.getElementById('cardsScratched').textContent = cardsScratchedToday;
+                document.getElementById('totalWinnings').textContent = utils.formatCoins(totalWinningsToday);
+                
+                // Add to history
+                addToHistory(currentPrize);
+                
+                utils.showNotification(`Congratulations! You won ${utils.formatCoins(currentPrize)} coins!`, 'success');
+
+                // Update button if limit reached
+                if (cardsScratchedToday >= 3) {
+                    document.getElementById('generateBtn').disabled = true;
+                    document.getElementById('generateBtn').innerHTML = '<i class="fas fa-check"></i> Daily Limit Reached';
+                }
+
+                // Reset for next card
+                document.getElementById('claimBtn').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error claiming prize:', error);
+                utils.showNotification('Error claiming prize', 'error');
+            }
+        }
+
+        function addToHistory(amount) {
+            const historyList = document.getElementById('scratchHistory');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <div class="history-icon">
+                    <i class="fas fa-scroll"></i>
+                </div>
+                <div class="history-details">
+                    <div class="history-description">Scratch Card Win</div>
+                    <div class="history-date">${new Date().toLocaleDateString()}</div>
+                </div>
+                <div class="history-amount">+${utils.formatCoins(amount)}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            
+            // Keep only last 5 items
+            if (historyList.children.length > 5) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+
+        function loadScratchHistory() {
+            // Load from localStorage for demo
+            const history = JSON.parse(localStorage.getItem('scratch_history') || '[]');
+            const historyList = document.getElementById('scratchHistory');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-item">No recent scratches</div>';
+                return;
+            }
+
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-icon">
+                        <i class="fas fa-scroll"></i>
+                    </div>
+                    <div class="history-details">
+                        <div class="history-description">Scratch Card Win</div>
+                        <div class="history-date">${item.date}</div>
+                    </div>
+                    <div class="history-amount">+${utils.formatCoins(item.amount)}</div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadScratchStats);
+
+        // Add scratch card styles
+        const scratchStyles = `
+            .scratch-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+
+            .stat-item {
+                background: var(--card-bg);
+                padding: 1.5rem;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: var(--shadow);
+            }
+
+            .stat-item h3 {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-item p {
+                color: var(--text-light);
+            }
+
+            .scratch-container {
+                display: flex;
+                justify-content: center;
+                margin: 3rem 0;
+            }
+
+            .scratch-card {
+                width: 300px;
+                height: 200px;
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                border-radius: 12px;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            }
+
+            .scratch-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: #cbd5e1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+
+            .scratch-instruction {
+                text-align: center;
+                color: #475569;
+            }
+
+            .scratch-instruction i {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+
+            .scratch-content {
+                padding: 2rem;
+                text-align: center;
+                color: white;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .prize-amount {
+                font-size: 3rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+            }
+
+            .prize-text {
+                font-size: 1.2rem;
+                opacity: 0.9;
+                margin-bottom: 1rem;
+            }
+
+            .action-section {
+                text-align: center;
+                margin: 2rem 0;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .note {
+                margin-top: 1rem;
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            .scratch-history {
+                margin: 3rem 0;
+            }
+
+            .scratch-history h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .history-list {
+                background: var(--card-bg);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .history-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .history-item:last-child {
+                border-bottom: none;
+            }
+
+            .history-icon {
+                width: 40px;
+                height: 40px;
+                background: var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                margin-right: 1rem;
+            }
+
+            .history-details {
+                flex: 1;
+            }
+
+            .history-description {
+                font-weight: 500;
+                margin-bottom: 0.25rem;
+            }
+
+            .history-date {
+                font-size: 0.8rem;
+                color: var(--text-light);
+            }
+
+            .history-amount {
+                font-weight: 600;
+                color: var(--secondary);
+            }
+
+            @media (max-width: 768px) {
+                .scratch-card {
+                    width: 280px;
+                    height: 180px;
+                }
+
+                .prize-amount {
+                    font-size: 2.5rem;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = scratchStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
