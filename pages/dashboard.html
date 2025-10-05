@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Balance Card -->
+        <div class="balance-card">
+            <div class="balance-info">
+                <h3>Your Balance</h3>
+                <h1 id="walletBalance">0 Coins</h1>
+                <p id="cashValue">≈ $0.00</p>
+            </div>
+            <div class="balance-actions">
+                <a href="withdraw.html" class="btn btn-secondary">Withdraw</a>
+                <a href="marketplace.html" class="btn btn-accent">Marketplace</a>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h4 id="referralCount">0</h4>
+                    <p>Referrals</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="stat-info">
+                    <h4 id="referralEarnings">0</h4>
+                    <p>Referral Earnings</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="stat-info">
+                    <h4 id="checkinStreak">0</h4>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-gem"></i>
+                </div>
+                <div class="stat-info">
+                    <h4 id="totalEarned">0</h4>
+                    <p>Total Earned</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earning Methods -->
+        <div class="section">
+            <h2>Earn Coins</h2>
+            <div class="earn-grid">
+                <a href="watch-video.html" class="earn-card">
+                    <div class="earn-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3>Watch Videos</h3>
+                    <p>500-1000 coins per video</p>
+                    <div class="earn-badge">Daily</div>
+                </a>
+                <a href="scratch-card.html" class="earn-card">
+                    <div class="earn-icon">
+                        <i class="fas fa-scroll"></i>
+                    </div>
+                    <h3>Scratch Cards</h3>
+                    <p>1000-3000 coins per card</p>
+                    <div class="earn-badge">Daily</div>
+                </a>
+                <a href="treasure-box.html" class="earn-card">
+                    <div class="earn-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <h3>Treasure Box</h3>
+                    <p>2000-5000 coins per box</p>
+                    <div class="earn-badge">Weekly</div>
+                </a>
+                <a href="daily-checkin.html" class="earn-card">
+                    <div class="earn-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3>Daily Check-in</h3>
+                    <p>500 coins daily + streak bonus</p>
+                    <div class="earn-badge streak">Day <span id="currentDay">1</span></div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section">
+            <h2>Recent Activity</h2>
+            <div class="activity-list" id="recentActivity">
+                <div class="activity-item loading">Loading activities...</div>
+            </div>
+        </div>
+
+        <!-- Referral Section -->
+        <div class="referral-section">
+            <div class="referral-content">
+                <h2>Invite Friends & Earn More</h2>
+                <p>Get 1000 coins for each friend who joins + lifetime commissions from their earnings!</p>
+                <div class="referral-code">
+                    <strong>Your Referral Code:</strong>
+                    <div class="code-display" id="referralCodeDisplay">Loading...</div>
+                    <button onclick="copyReferralCode()" class="btn btn-secondary">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                </div>
+                <a href="referral.html" class="btn">View Referral Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
