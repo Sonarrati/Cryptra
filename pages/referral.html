@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Program - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Referral Program</h1>
+            <p>Invite friends and earn lifetime commissions from 10 levels!</p>
+        </div>
+
+        <!-- Referral Stats -->
+        <div class="referral-stats">
+            <div class="stat-card large">
+                <div class="stat-main">
+                    <h3>Total Referral Earnings</h3>
+                    <h1 id="totalReferralEarnings">0 Coins</h1>
+                    <p>Lifetime commissions from your network</p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="directReferrals">0</h4>
+                        <p>Direct Referrals</p>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="totalNetwork">0</h4>
+                        <p>Total Network</p>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="todayCommissions">0</h4>
+                        <p>Today's Commissions</p>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="monthlyCommissions">0</h4>
+                        <p>This Month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referral Code Section -->
+        <div class="referral-share">
+            <h2>Your Referral Code</h2>
+            <div class="referral-code-large">
+                <div class="code-display" id="userReferralCode">LOADING...</div>
+                <div class="share-buttons">
+                    <button class="btn btn-primary" onclick="copyReferralCode()">
+                        <i class="fas fa-copy"></i> Copy Code
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareReferral()">
+                        <i class="fas fa-share"></i> Share
+                    </button>
+                </div>
+            </div>
+            
+            <div class="referral-link">
+                <p>Or share your referral link:</p>
+                <div class="link-container">
+                    <input type="text" id="referralLink" readonly class="form-input">
+                    <button class="btn btn-sm" onclick="copyReferralLink()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Structure -->
+        <div class="commission-structure">
+            <h2>10-Level Commission Structure</h2>
+            <div class="levels-grid">
+                <div class="level-item">
+                    <div class="level-number">1</div>
+                    <div class="level-info">
+                        <h4>Level 1 - Direct Referrals</h4>
+                        <p>5% commission</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">2</div>
+                    <div class="level-info">
+                        <h4>Level 2</h4>
+                        <p>2% commission</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">3</div>
+                    <div class="level-info">
+                        <h4>Level 3</h4>
+                        <p>1% commission</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">4</div>
+                    <div class="level-info">
+                        <h4>Level 4</h4>
+                        <p>0.7% commission</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">5</div>
+                    <div class="level-info">
+                        <h4>Level 5</h4>
+                        <p>0.5% commission</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">6-10</div>
+                    <div class="level-info">
+                        <h4>Levels 6-10</h4>
+                        <p>0.3% - 0.05% commission</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referral Tree -->
+        <div class="referral-tree">
+            <h2>Your Referral Network</h2>
+            <div class="tree-container">
+                <div class="tree-level">
+                    <div class="level-label">You</div>
+                    <div class="user-node current-user">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">You</div>
+                            <div class="user-earnings" id="userEarnings">0 coins earned</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tree-connector"></div>
+                
+                <div class="tree-level">
+                    <div class="level-label">Level 1</div>
+                    <div class="level-users" id="level1Users">
+                        <div class="empty-level">No direct referrals yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission History -->
+        <div class="commission-history">
+            <h2>Commission History</h2>
+            <div class="history-filters">
+                <button class="filter-btn active" onclick="filterCommissions('all')">All</button>
+                <button class="filter-btn" onclick="filterCommissions('today')">Today</button>
+                <button class="filter-btn" onclick="filterCommissions('week')">This Week</button>
+                <button class="filter-btn" onclick="filterCommissions('month')">This Month</button>
+            </div>
+            <div class="commission-list" id="commissionList">
+                <div class="commission-item loading">Loading commission history...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/referral.js"></script>
+</body>
+</html>
