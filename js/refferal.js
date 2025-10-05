@@ -1,4 +1,4 @@
-// Referral system functionality
+// Referral system functionality - FIXED VERSION
 document.addEventListener('DOMContentLoaded', async function() {
     await loadReferralData();
     await loadReferralTree();
@@ -7,8 +7,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadReferralData() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
+        if (authError || !user) {
+            console.error('Auth error:', authError);
+            return;
+        }
+
+        console.log('Loading referral data for user:', user.id);
+
         // Get user data
         const { data: userData, error } = await supabase
             .from('users')
@@ -16,77 +23,137 @@ async function loadReferralData() {
             .eq('id', user.id)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error loading user data:', error);
+            throw error;
+        }
 
         // Update UI with user data
-        document.getElementById('totalReferralEarnings').textContent = 
-            utils.formatCoins(userData.referral_earned) + ' Coins';
-        document.getElementById('userReferralCode').textContent = userData.referral_code;
-        document.getElementById('referralLink').value = 
-            `${window.location.origin}/pages/login.html?ref=${userData.referral_code}`;
-        document.getElementById('userEarnings').textContent = 
-            utils.formatCoins(userData.referral_earned) + ' coins earned';
+        if (userData) {
+            document.getElementById('totalReferralEarnings').textContent = 
+                utils.formatCoins(userData.referral_earned || 0) + ' Coins';
+            document.getElementById('userReferralCode').textContent = userData.referral_code || 'ERROR';
+            document.getElementById('referralLink').value = 
+                `${window.location.origin}/pages/login.html?ref=${userData.referral_code}`;
+            document.getElementById('userEarnings').textContent = 
+                utils.formatCoins(userData.referral_earned || 0) + ' coins earned';
+        }
 
         // Load referral stats
-        await loadReferralStats(user.id);
+        await loadReferralStats(user.id, userData.referral_code);
 
     } catch (error) {
         console.error('Error loading referral data:', error);
         utils.showNotification('Error loading referral data', 'error');
+        
+        // Set default values
+        document.getElementById('totalReferralEarnings').textContent = '0 Coins';
+        document.getElementById('userReferralCode').textContent = 'ERROR';
+        document.getElementById('userEarnings').textContent = '0 coins earned';
     }
 }
 
-async function loadReferralStats(userId) {
+async function loadReferralStats(userId, referralCode) {
     try {
-        // Count direct referrals
+        console.log('Loading referral stats for user:', userId, 'Code:', referralCode);
+
+        // Count direct referrals using referral code
         const { data: directRefs, error: refError } = await supabase
             .from('users')
-            .select('id')
-            .eq('referred_by', userId);
+            .select('id, email, created_at, wallet_balance')
+            .eq('referred_by', referralCode);
 
-        if (!refError) {
-            document.getElementById('directReferrals').textContent = directRefs.length;
+        if (refError) {
+            console.error('Error counting referrals:', refError);
         }
 
-        // Count total network (simplified - in real app, this would be recursive)
-        const { data: level2Refs } = await supabase
-            .from('users')
-            .select('id')
-            .in('referred_by', directRefs?.map(u => u.id) || []);
+        const referralCount = directRefs ? directRefs.length : 0;
+        
+        // Update UI elements
+        const referralCountElement = document.getElementById('directReferrals');
+        const totalNetworkElement = document.getElementById('totalNetwork');
+        
+        if (referralCountElement) {
+            referralCountElement.textContent = referralCount;
+        }
 
-        const totalNetwork = (directRefs?.length || 0) + (level2Refs?.length || 0);
-        document.getElementById('totalNetwork').textContent = totalNetwork;
+        // Calculate total network (simplified - levels 1+2)
+        let totalNetwork = referralCount;
+        if (directRefs && directRefs.length > 0) {
+            // Get level 2 referrals
+            const level2UserIds = directRefs.map(ref => ref.id);
+            const { data: level2Refs } = await supabase
+                .from('users')
+                .select('id')
+                .in('referred_by', level2UserIds);
 
-        // Load commission stats (simplified)
+            if (level2Refs) {
+                totalNetwork += level2Refs.length;
+            }
+        }
+
+        if (totalNetworkElement) {
+            totalNetworkElement.textContent = totalNetwork;
+        }
+
+        // Load today's and monthly commissions (simplified)
         const today = new Date().toDateString();
         const thisMonth = new Date().getMonth();
         
-        // These would normally come from the database
-        document.getElementById('todayCommissions').textContent = utils.formatCoins(0);
+        // These would normally come from database
+        document.getElementById('todayCommissions').textContent = '0';
         document.getElementById('monthlyCommissions').textContent = utils.formatCoins(0);
 
     } catch (error) {
         console.error('Error loading referral stats:', error);
+        // Set default values
+        document.getElementById('directReferrals').textContent = '0';
+        document.getElementById('totalNetwork').textContent = '0';
+        document.getElementById('todayCommissions').textContent = '0';
+        document.getElementById('monthlyCommissions').textContent = '0';
     }
 }
 
 async function loadReferralTree() {
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        
-        // Load direct referrals (Level 1)
+        if (!user) return;
+
+        console.log('Loading referral tree for user:', user.id);
+
+        // Get user's referral code first
+        const { data: userData } = await supabase
+            .from('users')
+            .select('referral_code')
+            .eq('id', user.id)
+            .single();
+
+        if (!userData || !userData.referral_code) {
+            console.error('No referral code found for user');
+            return;
+        }
+
+        // Load direct referrals using referral code
         const { data: directRefs, error } = await supabase
             .from('users')
             .select('id, email, created_at, wallet_balance')
-            .eq('referred_by', user.id)
+            .eq('referred_by', userData.referral_code)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error loading direct referrals:', error);
+            throw error;
+        }
 
         const level1Container = document.getElementById('level1Users');
+        if (!level1Container) {
+            console.error('Level 1 container not found');
+            return;
+        }
+
         level1Container.innerHTML = '';
 
-        if (directRefs.length === 0) {
+        if (!directRefs || directRefs.length === 0) {
             level1Container.innerHTML = '<div class="empty-level">No direct referrals yet</div>';
             return;
         }
@@ -103,7 +170,7 @@ async function loadReferralTree() {
                     <div class="user-join-date">Joined ${new Date(ref.created_at).toLocaleDateString()}</div>
                 </div>
                 <div class="user-stats">
-                    <div class="user-balance">${utils.formatCoins(ref.wallet_balance)} coins</div>
+                    <div class="user-balance">${utils.formatCoins(ref.wallet_balance || 0)} coins</div>
                 </div>
             `;
             level1Container.appendChild(userNode);
@@ -111,21 +178,28 @@ async function loadReferralTree() {
 
     } catch (error) {
         console.error('Error loading referral tree:', error);
+        const level1Container = document.getElementById('level1Users');
+        if (level1Container) {
+            level1Container.innerHTML = '<div class="empty-level">Error loading referrals</div>';
+        }
     }
 }
 
 async function loadCommissionHistory(filter = 'all') {
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        
+        if (!user) return;
+
+        console.log('Loading commission history for user:', user.id);
+
         // In a real app, this would query the referral_commissions table
-        // For now, we'll use mock data
+        // For demo, we'll create mock data that makes sense
         const mockCommissions = [
             {
                 id: 1,
                 source_user_id: 'user2',
                 level: 1,
-                coins_amount: 250,
+                coins_amount: 2500,
                 status: 'paid',
                 date_created: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
             },
@@ -133,7 +207,7 @@ async function loadCommissionHistory(filter = 'all') {
                 id: 2,
                 source_user_id: 'user3',
                 level: 1,
-                coins_amount: 500,
+                coins_amount: 1800,
                 status: 'paid',
                 date_created: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
             },
@@ -141,7 +215,7 @@ async function loadCommissionHistory(filter = 'all') {
                 id: 3,
                 source_user_id: 'user4',
                 level: 2,
-                coins_amount: 100,
+                coins_amount: 900,
                 status: 'paid',
                 date_created: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
             }
@@ -151,15 +225,21 @@ async function loadCommissionHistory(filter = 'all') {
 
     } catch (error) {
         console.error('Error loading commission history:', error);
-        document.getElementById('commissionList').innerHTML = 
-            '<div class="commission-item">Error loading commission history</div>';
+        const commissionList = document.getElementById('commissionList');
+        if (commissionList) {
+            commissionList.innerHTML = '<div class="commission-item">Error loading commission history</div>';
+        }
     }
 }
 
 function displayCommissions(commissions) {
     const commissionList = document.getElementById('commissionList');
+    if (!commissionList) {
+        console.error('Commission list element not found');
+        return;
+    }
     
-    if (commissions.length === 0) {
+    if (!commissions || commissions.length === 0) {
         commissionList.innerHTML = '<div class="commission-item">No commissions yet</div>';
         return;
     }
@@ -192,44 +272,127 @@ function displayCommissions(commissions) {
 }
 
 function copyReferralCode() {
-    const code = document.getElementById('userReferralCode').textContent;
-    navigator.clipboard.writeText(code).then(() => {
-        utils.showNotification('Referral code copied to clipboard!', 'success');
-    });
-}
+    try {
+        const codeElement = document.getElementById('userReferralCode');
+        if (!codeElement) {
+            utils.showNotification('Referral code element not found', 'error');
+            return;
+        }
+        
+        const code = codeElement.textContent;
+        if (!code || code === 'LOADING...' || code === 'ERROR') {
+            utils.showNotification('Referral code not available yet', 'warning');
+            return;
+        }
+        
+        // Use modern clipboard API with fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(() => {
+                utils.showNotification('Referral code copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Clipboard error:', err);
+                fallbackCopyText(code);
+            });
+        } else {
+            fallbackCopyText(code);
+        }
 
-function copyReferralLink() {
-    const link = document.getElementById('referralLink');
-    link.select();
-    document.execCommand('copy');
-    utils.showNotification('Referral link copied to clipboard!', 'success');
-}
-
-function shareReferral() {
-    const link = document.getElementById('referralLink').value;
-    const text = `Join Cryptra and start earning crypto rewards! Use my referral code: ${document.getElementById('userReferralCode').textContent}`;
-    
-    if (navigator.share) {
-        navigator.share({
-            title: 'Join Cryptra',
-            text: text,
-            url: link
-        });
-    } else {
-        // Fallback for browsers that don't support Web Share API
-        copyReferralLink();
-        utils.showNotification('Referral link copied! You can now share it.', 'info');
+    } catch (error) {
+        console.error('Error copying referral code:', error);
+        utils.showNotification('Error copying referral code', 'error');
     }
 }
 
-function filterCommissions(filter) {
-    // Update active filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
+function fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
     
-    loadCommissionHistory(filter);
+    try {
+        document.execCommand('copy');
+        utils.showNotification('Referral code copied to clipboard!', 'success');
+    } catch (err) {
+        console.error('Fallback copy error:', err);
+        utils.showNotification('Failed to copy referral code', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function copyReferralLink() {
+    try {
+        const linkInput = document.getElementById('referralLink');
+        if (!linkInput) {
+            utils.showNotification('Referral link element not found', 'error');
+            return;
+        }
+        
+        linkInput.select();
+        linkInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                utils.showNotification('Referral link copied to clipboard!', 'success');
+            });
+        } else {
+            document.execCommand('copy');
+            utils.showNotification('Referral link copied to clipboard!', 'success');
+        }
+    } catch (error) {
+        console.error('Error copying referral link:', error);
+        utils.showNotification('Error copying referral link', 'error');
+    }
+}
+
+function shareReferral() {
+    try {
+        const link = document.getElementById('referralLink').value;
+        const code = document.getElementById('userReferralCode').textContent;
+        const text = `Join Cryptra and start earning crypto rewards! Use my referral code: ${code}\n${link}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Join Cryptra - Earn Crypto Rewards',
+                text: text,
+                url: link
+            }).then(() => {
+                console.log('Share successful');
+            }).catch(err => {
+                console.error('Share error:', err);
+                fallbackShare(text);
+            });
+        } else {
+            fallbackShare(text);
+        }
+    } catch (error) {
+        console.error('Error sharing referral:', error);
+        utils.showNotification('Error sharing referral', 'error');
+    }
+}
+
+function fallbackShare(text) {
+    copyReferralLink();
+    utils.showNotification('Referral link copied! You can now share it anywhere.', 'info');
+}
+
+function filterCommissions(filter) {
+    try {
+        // Update active filter button
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        loadCommissionHistory(filter);
+    } catch (error) {
+        console.error('Error filtering commissions:', error);
+    }
 }
 
 // Add referral-specific styles
@@ -325,6 +488,7 @@ const referralStyles = `
         border-radius: 8px;
         display: inline-block;
         border: 2px dashed var(--primary);
+        min-width: 200px;
     }
 
     .share-buttons {
@@ -338,11 +502,16 @@ const referralStyles = `
         text-align: center;
     }
 
+    .referral-link p {
+        margin-bottom: 1rem;
+        color: var(--text);
+    }
+
     .link-container {
         display: flex;
         gap: 0.5rem;
         max-width: 500px;
-        margin: 1rem auto;
+        margin: 0 auto;
     }
 
     .link-container .form-input {
@@ -508,6 +677,7 @@ const referralStyles = `
         background: var(--background);
         border-radius: 8px;
         border: 1px dashed var(--border);
+        grid-column: 1 / -1;
     }
 
     .tree-connector {
@@ -605,6 +775,15 @@ const referralStyles = `
         font-size: 1.1rem;
     }
 
+    .error-message {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        margin: 1rem 0;
+    }
+
     @media (max-width: 768px) {
         .code-display {
             font-size: 1.5rem;
@@ -625,6 +804,10 @@ const referralStyles = `
 
         .level-users {
             grid-template-columns: 1fr;
+        }
+
+        .link-container {
+            flex-direction: column;
         }
     }
 `;
