@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Check-in - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Daily Check-in</h1>
+            <p>Check in daily to earn 500 coins + streak bonuses!</p>
+        </div>
+
+        <div class="checkin-stats">
+            <div class="stat-item">
+                <h3 id="currentStreak">0</h3>
+                <p>Current Streak</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="totalCheckins">0</h3>
+                <p>Total Check-ins</p>
+            </div>
+            <div class="stat-item">
+                <h3 id="totalEarnedCheckin">0</h3>
+                <p>Total Earned</p>
+            </div>
+        </div>
+
+        <div class="checkin-calendar">
+            <h3>Weekly Progress</h3>
+            <div class="week-days" id="weekDays">
+                <!-- Days will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="checkin-action">
+            <div class="checkin-card" id="checkinCard">
+                <div class="checkin-content">
+                    <div class="checkin-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3 id="checkinStatus">Ready to Check-in</h3>
+                    <p id="checkinDescription">Click the button below to claim your daily reward</p>
+                    <div class="checkin-reward" id="checkinReward">
+                        <span class="reward-amount">500</span>
+                        <span class="reward-text">Coins</span>
+                    </div>
+                    <button class="btn btn-primary btn-large" onclick="dailyCheckin()" id="checkinBtn">
+                        <i class="fas fa-check-circle"></i> Check-in Today
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="streak-bonus">
+            <h3>Streak Bonuses</h3>
+            <div class="bonus-list">
+                <div class="bonus-item">
+                    <div class="bonus-day">Day 1-6</div>
+                    <div class="bonus-amount">500 coins/day</div>
+                </div>
+                <div class="bonus-item highlight">
+                    <div class="bonus-day">Day 7</div>
+                    <div class="bonus-amount">1000 coins (2x Bonus!)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="checkin-history">
+            <h3>Check-in History</h3>
+            <div class="history-list" id="checkinHistory">
+                <div class="history-item">No check-in history</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let currentStreak = 0;
+        let totalCheckins = 0;
+        let totalEarned = 0;
+        let todayCheckedIn = false;
+
+        async function loadCheckinData() {
+            const { data: { user } } = await supabase.auth.getUser();
+            const userId = user.id;
+
+            // Load from localStorage for demo
+            const checkinData = JSON.parse(localStorage.getItem(`checkin_data_${userId}`) || '{"streak": 0, "total": 0, "earned": 0, "lastCheckin": null}');
+            
+            currentStreak = checkinData.streak;
+            totalCheckins = checkinData.total;
+            totalEarned = checkinData.earned;
+            
+            // Check if already checked in today
+            const today = new Date().toDateString();
+            const lastCheckin = checkinData.lastCheckin ? new Date(checkinData.lastCheckin).toDateString() : null;
+            todayCheckedIn = lastCheckin === today;
+            
+            updateUI();
+            loadWeekCalendar();
+            loadCheckinHistory();
+        }
+
+        function updateUI() {
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('totalCheckins').textContent = totalCheckins;
+            document.getElementById('totalEarnedCheckin').textContent = utils.formatCoins(totalEarned);
+            
+            const checkinCard = document.getElementById('checkinCard');
+            const checkinStatus = document.getElementById('checkinStatus');
+            const checkinDescription = document.getElementById('checkinDescription');
+            const checkinReward = document.getElementById('checkinReward');
+            const checkinBtn = document.getElementById('checkinBtn');
+            
+            if (todayCheckedIn) {
+                checkinCard.classList.add('checked');
+                checkinStatus.textContent = 'Already Checked-in Today';
+                checkinDescription.textContent = 'Come back tomorrow for more coins!';
+                checkinBtn.disabled = true;
+                checkinBtn.innerHTML = '<i class="fas fa-check"></i> Already Checked-in';
+                
+                // Show today's reward amount
+                const rewardAmount = currentStreak % 7 === 0 ? 1000 : 500;
+                checkinReward.innerHTML = `
+                    <span class="reward-amount">${utils.formatCoins(rewardAmount)}</span>
+                    <span class="reward-text">Coins Claimed</span>
+                `;
+            } else {
+                checkinCard.classList.remove('checked');
+                checkinStatus.textContent = 'Ready to Check-in';
+                checkinDescription.textContent = 'Claim your daily reward and maintain your streak!';
+                checkinBtn.disabled = false;
+                checkinBtn.innerHTML = '<i class="fas fa-check-circle"></i> Check-in Today';
+                
+                // Calculate today's reward
+                const tomorrowStreak = currentStreak + 1;
+                const rewardAmount = tomorrowStreak % 7 === 0 ? 1000 : 500;
+                checkinReward.innerHTML = `
+                    <span class="reward-amount">${utils.formatCoins(rewardAmount)}</span>
+                    <span class="reward-text">Coins Today</span>
+                `;
+            }
+        }
+
+        function loadWeekCalendar() {
+            const weekDays = document.getElementById('weekDays');
+            weekDays.innerHTML = '';
+            
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date().getDay();
+            
+            // Get check-in data for the week
+            const checkinHistory = JSON.parse(localStorage.getItem('checkin_history') || '[]');
+            
+            for (let i = 0; i < 7; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day';
+                
+                // Check if this day should be marked as checked
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() - (today - i));
+                const targetDateStr = targetDate.toDateString();
+                
+                const isChecked = checkinHistory.some(entry => 
+                    new Date(entry.date).toDateString() === targetDateStr
+                );
+                
+                const isToday = i === today;
+                const isFuture = i > today;
+                
+                if (isChecked) {
+                    dayElement.classList.add('checked');
+                } else if (isToday && todayCheckedIn) {
+                    dayElement.classList.add('checked');
+                } else if (isFuture) {
+                    dayElement.classList.add('future');
+                }
+                
+                if (isToday) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Add streak bonus indicator for day 7
+                if (i === 6) {
+                    dayElement.classList.add('bonus-day');
+                }
+                
+                dayElement.innerHTML = `
+                    <div class="day-name">${days[i]}</div>
+                    <div class="day-status">
+                        ${isChecked || (isToday && todayCheckedIn) ? '<i class="fas fa-check"></i>' : 
+                          isFuture ? '' : '<i class="fas fa-times"></i>'}
+                    </div>
+                    ${i === 6 ? '<div class="bonus-indicator">2x</div>' : ''}
+                `;
+                
+                weekDays.appendChild(dayElement);
+            }
+        }
+
+        async function dailyCheckin() {
+            if (todayCheckedIn) {
+                utils.showNotification('You have already checked in today!', 'warning');
+                return;
+            }
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const userId = user.id;
+                
+                // Calculate reward (2x on 7th day)
+                const newStreak = currentStreak + 1;
+                const isBonusDay = newStreak % 7 === 0;
+                const rewardAmount = isBonusDay ? 1000 : 500;
+                
+                // Update user balance
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('wallet_balance')
+                    .eq('id', userId)
+                    .single();
+
+                const newBalance = userData.wallet_balance + rewardAmount;
+
+                await supabase
+                    .from('users')
+                    .update({ wallet_balance: newBalance })
+                    .eq('id', userId);
+
+                // Record transaction
+                await supabase
+                    .from('coin_transactions')
+                    .insert([
+                        {
+                            user_id: userId,
+                            source_type: 'checkin',
+                            coins_amount: rewardAmount,
+                            balance_after: newBalance
+                        }
+                    ]);
+
+                // Update local data
+                currentStreak = newStreak;
+                totalCheckins++;
+                totalEarned += rewardAmount;
+                todayCheckedIn = true;
+                
+                const checkinData = {
+                    streak: currentStreak,
+                    total: totalCheckins,
+                    earned: totalEarned,
+                    lastCheckin: new Date().toISOString()
+                };
+                
+                localStorage.setItem(`checkin_data_${userId}`, JSON.stringify(checkinData));
+                
+                // Add to history
+                addToCheckinHistory(rewardAmount, isBonusDay);
+                
+                // Update UI
+                updateUI();
+                loadWeekCalendar();
+                
+                utils.showNotification(
+                    `Check-in successful! You earned ${utils.formatCoins(rewardAmount)} coins${isBonusDay ? ' (2x Bonus!)' : ''}`,
+                    'success'
+                );
+
+            } catch (error) {
+                console.error('Error processing check-in:', error);
+                utils.showNotification('Error processing check-in', 'error');
+            }
+        }
+
+        function addToCheckinHistory(amount, isBonus) {
+            const historyList = document.getElementById('checkinHistory');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            historyItem.innerHTML = `
+                <div class="history-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="history-details">
+                    <div class="history-description">
+                        Daily Check-in ${isBonus ? '<span class="bonus-badge">2x Bonus!</span>' : ''}
+                    </div>
+                    <div class="history-date">${new Date().toLocaleDateString()}</div>
+                </div>
+                <div class="history-amount">+${utils.formatCoins(amount)}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            
+            // Keep only last 10 items
+            if (historyList.children.length > 10) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+
+        function loadCheckinHistory() {
+            // Load from localStorage for demo
+            const history = JSON.parse(localStorage.getItem('checkin_history') || '[]');
+            const historyList = document.getElementById('checkinHistory');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-item">No check-in history</div>';
+                return;
+            }
+
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="history-details">
+                        <div class="history-description">
+                            Daily Check-in ${item.bonus ? '<span class="bonus-badge">2x Bonus!</span>' : ''}
+                        </div>
+                        <div class="history-date">${item.date}</div>
+                    </div>
+                    <div class="history-amount">+${utils.formatCoins(item.amount)}</div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCheckinData);
+
+        // Add check-in styles
+        const checkinStyles = `
+            .checkin-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin: 2rem 0;
+            }
+
+            .stat-item {
+                background: var(--card-bg);
+                padding: 1.5rem;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: var(--shadow);
+            }
+
+            .stat-item h3 {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+
+            .stat-item p {
+                color: var(--text-light);
+            }
+
+            .checkin-calendar {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                box-shadow: var(--shadow);
+            }
+
+            .checkin-calendar h3 {
+                margin-bottom: 1.5rem;
+                text-align: center;
+                color: var(--text);
+            }
+
+            .week-days {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 0.5rem;
+            }
+
+            .day {
+                background: var(--background);
+                padding: 1rem 0.5rem;
+                border-radius: 8px;
+                text-align: center;
+                position: relative;
+                border: 2px solid var(--border);
+                transition: all 0.3s;
+            }
+
+            .day.checked {
+                background: var(--secondary);
+                color: white;
+                border-color: var(--secondary);
+            }
+
+            .day.today {
+                border-color: var(--primary);
+            }
+
+            .day.future {
+                opacity: 0.6;
+            }
+
+            .day.bonus-day {
+                border: 2px dashed var(--accent);
+            }
+
+            .day-name {
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .bonus-indicator {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: var(--accent);
+                color: white;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                font-size: 0.7rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .checkin-action {
+                display: flex;
+                justify-content: center;
+                margin: 3rem 0;
+            }
+
+            .checkin-card {
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                color: white;
+                padding: 3rem;
+                border-radius: 12px;
+                text-align: center;
+                box-shadow: var(--shadow);
+                transition: all 0.3s;
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .checkin-card.checked {
+                background: linear-gradient(135deg, var(--secondary) 0%, #0da271 100%);
+            }
+
+            .checkin-icon {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+                opacity: 0.9;
+            }
+
+            .checkin-content h3 {
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+
+            .checkin-content p {
+                margin-bottom: 2rem;
+                opacity: 0.9;
+            }
+
+            .checkin-reward {
+                margin-bottom: 2rem;
+            }
+
+            .reward-amount {
+                font-size: 3rem;
+                font-weight: 700;
+                display: block;
+                line-height: 1;
+            }
+
+            .reward-text {
+                font-size: 1.2rem;
+                opacity: 0.9;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .streak-bonus {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                box-shadow: var(--shadow);
+            }
+
+            .streak-bonus h3 {
+                margin-bottom: 1.5rem;
+                text-align: center;
+                color: var(--text);
+            }
+
+            .bonus-list {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .bonus-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                background: var(--background);
+                border-radius: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .bonus-item.highlight {
+                background: linear-gradient(135deg, var(--accent) 0%, #e58c0a 100%);
+                color: white;
+                border: none;
+            }
+
+            .bonus-day {
+                font-weight: 600;
+            }
+
+            .bonus-amount {
+                font-weight: 500;
+            }
+
+            .checkin-history {
+                margin: 3rem 0;
+            }
+
+            .checkin-history h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .history-list {
+                background: var(--card-bg);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .history-item {
+                display: flex;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .history-item:last-child {
+                border-bottom: none;
+            }
+
+            .history-icon {
+                width: 40px;
+                height: 40px;
+                background: var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                margin-right: 1rem;
+            }
+
+            .history-details {
+                flex: 1;
+            }
+
+            .history-description {
+                font-weight: 500;
+                margin-bottom: 0.25rem;
+            }
+
+            .history-date {
+                font-size: 0.8rem;
+                color: var(--text-light);
+            }
+
+            .history-amount {
+                font-weight: 600;
+                color: var(--secondary);
+            }
+
+            .bonus-badge {
+                background: var(--accent);
+                color: white;
+                padding: 0.2rem 0.5rem;
+                border-radius: 12px;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+
+            @media (max-width: 768px) {
+                .week-days {
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 0.5rem;
+                }
+
+                .week-days .day:nth-child(n+5) {
+                    grid-column: span 2;
+                }
+
+                .checkin-card {
+                    padding: 2rem;
+                }
+
+                .reward-amount {
+                    font-size: 2.5rem;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = checkinStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
