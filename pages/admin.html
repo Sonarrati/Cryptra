@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-logo">
+                <h2>Cryptra Admin</h2>
+            </div>
+            <nav class="admin-nav">
+                <a href="#dashboard" class="admin-nav-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="#users" class="admin-nav-item" onclick="showSection('users')">
+                    <i class="fas fa-users"></i>
+                    Users
+                </a>
+                <a href="#withdrawals" class="admin-nav-item" onclick="showSection('withdrawals')">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Withdrawals
+                </a>
+                <a href="#transactions" class="admin-nav-item" onclick="showSection('transactions')">
+                    <i class="fas fa-exchange-alt"></i>
+                    Transactions
+                </a>
+                <a href="#referrals" class="admin-nav-item" onclick="showSection('referrals')">
+                    <i class="fas fa-network-wired"></i>
+                    Referrals
+                </a>
+                <a href="#products" class="admin-nav-item" onclick="showSection('products')">
+                    <i class="fas fa-store"></i>
+                    Products
+                </a>
+                <a href="#settings" class="admin-nav-item" onclick="showSection('settings')">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="../index.html" class="admin-nav-item">
+                    <i class="fas fa-home"></i>
+                    Back to Site
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="admin-section active">
+                <div class="admin-header">
+                    <h1>Admin Dashboard</h1>
+                    <div class="admin-actions">
+                        <button class="btn btn-primary" onclick="refreshStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="admin-stats">
+                    <div class="admin-stat-card">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                    <div class="admin-stat-card">
+                        <h3 id="totalWithdrawals">0</h3>
+                        <p>Total Withdrawals</p>
+                    </div>
+                    <div class="admin-stat-card">
+                        <h3 id="pendingWithdrawals">0</h3>
+                        <p>Pending Withdrawals</p>
+                    </div>
+                    <div class="admin-stat-card">
+                        <h3 id="totalCommissions">0</h3>
+                        <p>Referral Commissions</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="#withdrawals" class="quick-action" onclick="showSection('withdrawals')">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Process Withdrawals
+                    </a>
+                    <a href="#users" class="quick-action" onclick="showSection('users')">
+                        <i class="fas fa-user-plus"></i>
+                        Add User
+                    </a>
+                    <a href="#products" class="quick-action" onclick="showSection('products')">
+                        <i class="fas fa-plus"></i>
+                        Add Product
+                    </a>
+                    <a href="#settings" class="quick-action" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-container">
+                    <h3>Revenue Overview</h3>
+                    <div class="chart-placeholder">
+                        Revenue Chart Placeholder
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="admin-table">
+                    <div class="admin-table-header">
+                        <h3>Recent Withdrawals</h3>
+                    </div>
+                    <div class="admin-table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Coins</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentWithdrawals">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users" class="admin-section">
+                <div class="admin-header">
+                    <h1>User Management</h1>
+                    <button class="btn btn-primary" onclick="showUserModal()">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+
+                <div class="admin-table">
+                    <div class="admin-table-header">
+                        <h3>All Users</h3>
+                        <input type="text" placeholder="Search users..." class="form-input" style="width: 300px;">
+                    </div>
+                    <div class="admin-table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Balance</th>
+                                    <th>Referrals</th>
+                                    <th>KYC Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Withdrawals Section -->
+            <section id="withdrawals" class="admin-section">
+                <div class="admin-header">
+                    <h1>Withdrawal Management</h1>
+                </div>
+
+                <div class="admin-table">
+                    <div class="admin-table-header">
+                        <h3>Pending Withdrawals</h3>
+                    </div>
+                    <div class="admin-table-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Coins</th>
+                                    <th>Method</th>
+                                    <th>Details</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingWithdrawalsTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Loading withdrawals...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Add more sections for Transactions, Referrals, Products, Settings -->
+            
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/admin.js"></script>
+</body>
+</html>
