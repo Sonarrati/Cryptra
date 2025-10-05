@@ -7,40 +7,134 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadUserData() {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+            console.error('Auth error:', authError);
+            window.location.href = 'login.html';
+            return;
+        }
+
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
 
-        // Get user profile
-        const { data: userData, error } = await supabase
+        console.log('Loading data for user:', user.id);
+
+        // Get user profile with error handling
+        const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
             .eq('id', user.id)
             .single();
 
-        if (error) throw error;
+        if (userError) {
+            console.error('Error fetching user data:', userError);
+            
+            // If user doesn't exist in database, create profile
+            if (userError.code === 'PGRST116') {
+                await createUserProfile(user);
+                // Retry loading data
+                await loadUserData();
+                return;
+            }
+            
+            throw userError;
+        }
+
+        if (!userData) {
+            throw new Error('User data not found');
+        }
+
+        console.log('User data loaded:', userData);
 
         // Update UI with user data
         document.getElementById('walletBalance').textContent = utils.formatCoins(userData.wallet_balance) + ' Coins';
         document.getElementById('cashValue').textContent = '≈ $' + utils.coinsToCash(userData.wallet_balance);
-        document.getElementById('referralEarnings').textContent = utils.formatCoins(userData.referral_earned);
-        document.getElementById('referralCodeDisplay').textContent = userData.referral_code;
+        document.getElementById('referralEarnings').textContent = utils.formatCoins(userData.referral_earned || 0);
+        
+        if (userData.referral_code) {
+            document.getElementById('referralCodeDisplay').textContent = userData.referral_code;
+        }
 
         // Load check-in streak
-        loadCheckinStreak(user.id);
+        await loadCheckinStreak(user.id);
 
     } catch (error) {
         console.error('Error loading user data:', error);
-        utils.showNotification('Error loading dashboard data', 'error');
+        utils.showNotification('Error loading dashboard data. Please refresh the page.', 'error');
+        
+        // Show placeholder data
+        document.getElementById('walletBalance').textContent = '0 Coins';
+        document.getElementById('cashValue').textContent = '≈ $0.00';
+        document.getElementById('referralEarnings').textContent = '0';
+        document.getElementById('referralCodeDisplay').textContent = 'ERROR';
     }
+}
+
+async function createUserProfile(user) {
+    try {
+        console.log('Creating user profile for:', user.id);
+        
+        const referralCode = generateReferralCode();
+        const { data, error } = await supabase
+            .from('users')
+            .insert([
+                {
+                    id: user.id,
+                    email: user.email,
+                    referral_code: referralCode,
+                    wallet_balance: 2000, // Signup bonus
+                    referral_earned: 0,
+                    kyc_status: 'pending',
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        if (error) {
+            console.error('Error creating user profile:', error);
+            throw error;
+        }
+
+        // Record signup bonus transaction
+        await supabase
+            .from('coin_transactions')
+            .insert([
+                {
+                    user_id: user.id,
+                    source_type: 'signup',
+                    coins_amount: 2000,
+                    balance_after: 2000,
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        console.log('User profile created successfully');
+        utils.showNotification('Welcome! 2000 coins bonus added to your account.', 'success');
+
+    } catch (error) {
+        console.error('Error in createUserProfile:', error);
+        throw error;
+    }
+}
+
+function generateReferralCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
 }
 
 async function loadRecentActivity() {
     try {
         const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
         
+        console.log('Loading recent activity for user:', user.id);
+
         const { data: transactions, error } = await supabase
             .from('coin_transactions')
             .select('*')
@@ -48,13 +142,33 @@ async function loadRecentActivity() {
             .order('created_at', { ascending: false })
             .limit(10);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error loading transactions:', error);
+            throw error;
+        }
 
         const activityList = document.getElementById('recentActivity');
+        
+        if (!activityList) {
+            console.error('Activity list element not found');
+            return;
+        }
+
         activityList.innerHTML = '';
 
-        if (transactions.length === 0) {
-            activityList.innerHTML = '<div class="activity-item">No activity yet</div>';
+        if (!transactions || transactions.length === 0) {
+            activityList.innerHTML = `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-description">No activity yet</div>
+                        <div class="activity-date">Start earning coins to see activity</div>
+                    </div>
+                    <div class="activity-amount positive">+0</div>
+                </div>
+            `;
             return;
         }
 
@@ -65,15 +179,19 @@ async function loadRecentActivity() {
             const icon = getActivityIcon(transaction.source_type);
             const description = getActivityDescription(transaction.source_type, transaction.coins_amount);
             const date = new Date(transaction.created_at).toLocaleDateString();
+            const isPositive = transaction.coins_amount >= 0;
+            const sign = isPositive ? '+' : '';
             
             activityItem.innerHTML = `
-                <div class="activity-icon">${icon}</div>
+                <div class="activity-icon ${isPositive ? 'positive' : 'negative'}">
+                    ${icon}
+                </div>
                 <div class="activity-details">
                     <div class="activity-description">${description}</div>
                     <div class="activity-date">${date}</div>
                 </div>
-                <div class="activity-amount ${transaction.coins_amount >= 0 ? 'positive' : 'negative'}">
-                    ${transaction.coins_amount >= 0 ? '+' : ''}${utils.formatCoins(transaction.coins_amount)}
+                <div class="activity-amount ${isPositive ? 'positive' : 'negative'}">
+                    ${sign}${utils.formatCoins(transaction.coins_amount)}
                 </div>
             `;
             
@@ -82,60 +200,122 @@ async function loadRecentActivity() {
 
     } catch (error) {
         console.error('Error loading recent activity:', error);
+        const activityList = document.getElementById('recentActivity');
+        if (activityList) {
+            activityList.innerHTML = `
+                <div class="activity-item">
+                    <div class="activity-details">
+                        <div class="activity-description">Error loading activities</div>
+                        <div class="activity-date">Please try again later</div>
+                    </div>
+                </div>
+            `;
+        }
     }
 }
 
 async function loadReferralStats() {
     try {
         const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        console.log('Loading referral stats for user:', user.id);
         
         // Count direct referrals
-        const { data: referrals, error } = await supabase
+        const { data: referrals, error: refError } = await supabase
             .from('users')
             .select('id')
             .eq('referred_by', user.id);
 
-        if (error) throw error;
+        if (refError) {
+            console.error('Error counting referrals:', refError);
+        }
 
-        document.getElementById('referralCount').textContent = referrals?.length || 0;
-
-        // Calculate total earned (simplified - in real app, sum from referral_commissions)
+        const referralCount = referrals ? referrals.length : 0;
+        
+        // Update UI elements safely
+        const referralCountElement = document.getElementById('referralCount');
+        const totalEarnedElement = document.getElementById('totalEarned');
+        
+        if (referralCountElement) {
+            referralCountElement.textContent = referralCount;
+        }
+        
+        // Get user data for total earnings
         const { data: userData } = await supabase
             .from('users')
-            .select('referral_earned, wallet_balance')
+            .select('wallet_balance, referral_earned')
             .eq('id', user.id)
             .single();
 
-        if (userData) {
-            document.getElementById('totalEarned').textContent = utils.formatCoins(userData.wallet_balance + userData.referral_earned);
+        if (userData && totalEarnedElement) {
+            const totalEarned = (userData.wallet_balance || 0) + (userData.referral_earned || 0);
+            totalEarnedElement.textContent = utils.formatCoins(totalEarned);
         }
 
     } catch (error) {
         console.error('Error loading referral stats:', error);
+        // Set default values on error
+        const referralCountElement = document.getElementById('referralCount');
+        const totalEarnedElement = document.getElementById('totalEarned');
+        
+        if (referralCountElement) referralCountElement.textContent = '0';
+        if (totalEarnedElement) totalEarnedElement.textContent = '0';
     }
 }
 
 async function loadCheckinStreak(userId) {
-    // This would typically come from the database
-    // For now, we'll use localStorage
-    const streakData = JSON.parse(localStorage.getItem(`checkin_streak_${userId}`) || '{"streak": 0, "lastCheckin": null}');
-    
-    const today = new Date().toDateString();
-    const lastCheckin = streakData.lastCheckin ? new Date(streakData.lastCheckin).toDateString() : null;
-    
-    let currentStreak = streakData.streak;
-    
-    // Reset streak if missed a day
-    if (lastCheckin && lastCheckin !== today) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        if (lastCheckin !== yesterday.toDateString()) {
-            currentStreak = 0;
+    try {
+        console.log('Loading check-in streak for user:', userId);
+        
+        // This would typically come from the database
+        // For now, we'll use localStorage with better error handling
+        let streakData;
+        try {
+            streakData = JSON.parse(localStorage.getItem(`checkin_streak_${userId}`) || '{"streak": 0, "lastCheckin": null}');
+        } catch (e) {
+            streakData = { streak: 0, lastCheckin: null };
         }
+        
+        const today = new Date().toDateString();
+        const lastCheckin = streakData.lastCheckin ? new Date(streakData.lastCheckin).toDateString() : null;
+        
+        let currentStreak = streakData.streak || 0;
+        
+        // Reset streak if missed a day
+        if (lastCheckin && lastCheckin !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (lastCheckin !== yesterday.toDateString()) {
+                currentStreak = 0;
+                // Update localStorage
+                localStorage.setItem(`checkin_streak_${userId}`, JSON.stringify({
+                    streak: 0,
+                    lastCheckin: null
+                }));
+            }
+        }
+        
+        // Update UI elements safely
+        const checkinStreakElement = document.getElementById('checkinStreak');
+        const currentDayElement = document.getElementById('currentDay');
+        
+        if (checkinStreakElement) {
+            checkinStreakElement.textContent = currentStreak;
+        }
+        if (currentDayElement) {
+            currentDayElement.textContent = (currentStreak % 7) + 1;
+        }
+
+    } catch (error) {
+        console.error('Error loading check-in streak:', error);
+        // Set default values
+        const checkinStreakElement = document.getElementById('checkinStreak');
+        const currentDayElement = document.getElementById('currentDay');
+        
+        if (checkinStreakElement) checkinStreakElement.textContent = '0';
+        if (currentDayElement) currentDayElement.textContent = '1';
     }
-    
-    document.getElementById('checkinStreak').textContent = currentStreak;
-    document.getElementById('currentDay').textContent = (currentStreak % 7) + 1;
 }
 
 function getActivityIcon(sourceType) {
@@ -147,10 +327,12 @@ function getActivityIcon(sourceType) {
         'referral': 'fas fa-users',
         'checkin': 'fas fa-calendar-check',
         'withdrawal': 'fas fa-money-bill-wave',
-        'purchase': 'fas fa-shopping-cart'
+        'purchase': 'fas fa-shopping-cart',
+        'spend': 'fas fa-coins'
     };
     
-    return `<i class="${icons[sourceType] || 'fas fa-coins'}"></i>`;
+    const iconClass = icons[sourceType] || 'fas fa-coins';
+    return `<i class="${iconClass}"></i>`;
 }
 
 function getActivityDescription(sourceType, amount) {
@@ -162,20 +344,46 @@ function getActivityDescription(sourceType, amount) {
         'referral': 'Referral Commission',
         'checkin': 'Daily Check-in',
         'withdrawal': 'Withdrawal',
-        'purchase': 'Marketplace Purchase'
+        'purchase': 'Marketplace Purchase',
+        'spend': 'Coin Spend'
     };
     
     return descriptions[sourceType] || 'Coin Transaction';
 }
 
 function copyReferralCode() {
-    const code = document.getElementById('referralCodeDisplay').textContent;
-    navigator.clipboard.writeText(code).then(() => {
-        utils.showNotification('Referral code copied to clipboard!', 'success');
-    });
+    try {
+        const codeElement = document.getElementById('referralCodeDisplay');
+        if (!codeElement) {
+            utils.showNotification('Referral code not available', 'error');
+            return;
+        }
+        
+        const code = codeElement.textContent;
+        if (!code || code === 'LOADING...' || code === 'ERROR') {
+            utils.showNotification('Referral code not ready', 'warning');
+            return;
+        }
+        
+        navigator.clipboard.writeText(code).then(() => {
+            utils.showNotification('Referral code copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            utils.showNotification('Referral code copied to clipboard!', 'success');
+        });
+    } catch (error) {
+        console.error('Error copying referral code:', error);
+        utils.showNotification('Error copying referral code', 'error');
+    }
 }
 
-// Add CSS for dashboard components
+// Add CSS for dashboard components with error states
 const dashboardStyles = `
     .balance-card {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -336,13 +544,22 @@ const dashboardStyles = `
     .activity-icon {
         width: 40px;
         height: 40px;
-        background: var(--primary);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
         margin-right: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .activity-icon.positive {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .activity-icon.negative {
+        background: #fee2e2;
+        color: #dc2626;
     }
 
     .activity-details {
@@ -361,6 +578,7 @@ const dashboardStyles = `
 
     .activity-amount {
         font-weight: 600;
+        font-size: 1.1rem;
     }
 
     .activity-amount.positive {
@@ -408,6 +626,16 @@ const dashboardStyles = `
         padding: 0.5rem 1rem;
         border-radius: 4px;
         display: inline-block;
+        min-width: 150px;
+    }
+
+    .error-state {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        margin: 1rem 0;
     }
 
     @media (max-width: 768px) {
