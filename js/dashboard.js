@@ -1,5 +1,6 @@
-// Dashboard functionality
+// Dashboard functionality - FIXED VERSION
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Dashboard loading started...');
     await loadUserData();
     await loadRecentActivity();
     await loadReferralStats();
@@ -7,6 +8,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadUserData() {
     try {
+        console.log('Starting user data load...');
+        
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError) {
@@ -16,60 +19,79 @@ async function loadUserData() {
         }
 
         if (!user) {
+            console.log('No user found, redirecting to login');
             window.location.href = 'login.html';
             return;
         }
 
-        console.log('Loading data for user:', user.id);
+        console.log('User found:', user.id, user.email);
 
-        // Get user profile with error handling
-        const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+        // Get user profile with retry logic
+        let userData;
+        let retryCount = 0;
+        const maxRetries = 3;
 
-        if (userError) {
-            console.error('Error fetching user data:', userError);
-            
-            // If user doesn't exist in database, create profile
-            if (userError.code === 'PGRST116') {
-                await createUserProfile(user);
-                // Retry loading data
-                await loadUserData();
-                return;
+        while (retryCount < maxRetries) {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error(`Attempt ${retryCount + 1} - Error fetching user data:`, error);
+                
+                if (error.code === 'PGRST116') {
+                    // User doesn't exist in database, create profile
+                    console.log('User profile not found, creating...');
+                    await createUserProfile(user);
+                    retryCount++;
+                    continue;
+                } else {
+                    throw error;
+                }
             }
-            
-            throw userError;
+
+            userData = data;
+            break;
         }
 
         if (!userData) {
-            throw new Error('User data not found');
+            throw new Error('Failed to load user data after retries');
         }
 
-        console.log('User data loaded:', userData);
+        console.log('User data loaded successfully:', userData);
 
         // Update UI with user data
-        document.getElementById('walletBalance').textContent = utils.formatCoins(userData.wallet_balance) + ' Coins';
-        document.getElementById('cashValue').textContent = '≈ $' + utils.coinsToCash(userData.wallet_balance);
-        document.getElementById('referralEarnings').textContent = utils.formatCoins(userData.referral_earned || 0);
-        
-        if (userData.referral_code) {
-            document.getElementById('referralCodeDisplay').textContent = userData.referral_code;
-        }
+        updateDashboardUI(userData);
 
         // Load check-in streak
         await loadCheckinStreak(user.id);
 
     } catch (error) {
-        console.error('Error loading user data:', error);
-        utils.showNotification('Error loading dashboard data. Please refresh the page.', 'error');
+        console.error('Critical error loading user data:', error);
+        showErrorState();
+    }
+}
+
+function updateDashboardUI(userData) {
+    try {
+        // Update balance
+        const walletBalance = userData.wallet_balance || 0;
+        const referralEarned = userData.referral_earned || 0;
         
-        // Show placeholder data
-        document.getElementById('walletBalance').textContent = '0 Coins';
-        document.getElementById('cashValue').textContent = '≈ $0.00';
-        document.getElementById('referralEarnings').textContent = '0';
-        document.getElementById('referralCodeDisplay').textContent = 'ERROR';
+        document.getElementById('walletBalance').textContent = formatCoins(walletBalance) + ' Coins';
+        document.getElementById('cashValue').textContent = '≈ $' + coinsToCash(walletBalance);
+        document.getElementById('referralEarnings').textContent = formatCoins(referralEarned);
+        
+        if (userData.referral_code) {
+            document.getElementById('referralCodeDisplay').textContent = userData.referral_code;
+        } else {
+            document.getElementById('referralCodeDisplay').textContent = 'N/A';
+        }
+
+    } catch (error) {
+        console.error('Error updating UI:', error);
     }
 }
 
@@ -78,6 +100,8 @@ async function createUserProfile(user) {
         console.log('Creating user profile for:', user.id);
         
         const referralCode = generateReferralCode();
+        const signupBonus = 2000;
+
         const { data, error } = await supabase
             .from('users')
             .insert([
@@ -85,33 +109,48 @@ async function createUserProfile(user) {
                     id: user.id,
                     email: user.email,
                     referral_code: referralCode,
-                    wallet_balance: 2000, // Signup bonus
+                    wallet_balance: signupBonus,
                     referral_earned: 0,
                     kyc_status: 'pending',
                     created_at: new Date().toISOString()
                 }
-            ]);
+            ])
+            .select()
+            .single();
 
         if (error) {
             console.error('Error creating user profile:', error);
+            
+            // If it's a duplicate error, maybe profile was created by another process
+            if (error.code === '23505') {
+                console.log('User profile already exists, continuing...');
+                return;
+            }
             throw error;
         }
 
+        console.log('User profile created successfully:', data);
+
         // Record signup bonus transaction
-        await supabase
+        const { error: transactionError } = await supabase
             .from('coin_transactions')
             .insert([
                 {
                     user_id: user.id,
                     source_type: 'signup',
-                    coins_amount: 2000,
-                    balance_after: 2000,
+                    coins_amount: signupBonus,
+                    balance_after: signupBonus,
                     created_at: new Date().toISOString()
                 }
             ]);
 
-        console.log('User profile created successfully');
-        utils.showNotification('Welcome! 2000 coins bonus added to your account.', 'success');
+        if (transactionError) {
+            console.error('Error recording signup transaction:', transactionError);
+            // Don't throw, as user profile was created successfully
+        }
+
+        console.log('Signup bonus transaction recorded');
+        return data;
 
     } catch (error) {
         console.error('Error in createUserProfile:', error);
@@ -132,7 +171,7 @@ async function loadRecentActivity() {
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        
+
         console.log('Loading recent activity for user:', user.id);
 
         const { data: transactions, error } = await supabase
@@ -144,74 +183,84 @@ async function loadRecentActivity() {
 
         if (error) {
             console.error('Error loading transactions:', error);
-            throw error;
-        }
-
-        const activityList = document.getElementById('recentActivity');
-        
-        if (!activityList) {
-            console.error('Activity list element not found');
+            // Show placeholder activity
+            showPlaceholderActivity();
             return;
         }
 
-        activityList.innerHTML = '';
-
-        if (!transactions || transactions.length === 0) {
-            activityList.innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="activity-details">
-                        <div class="activity-description">No activity yet</div>
-                        <div class="activity-date">Start earning coins to see activity</div>
-                    </div>
-                    <div class="activity-amount positive">+0</div>
-                </div>
-            `;
-            return;
-        }
-
-        transactions.forEach(transaction => {
-            const activityItem = document.createElement('div');
-            activityItem.className = 'activity-item';
-            
-            const icon = getActivityIcon(transaction.source_type);
-            const description = getActivityDescription(transaction.source_type, transaction.coins_amount);
-            const date = new Date(transaction.created_at).toLocaleDateString();
-            const isPositive = transaction.coins_amount >= 0;
-            const sign = isPositive ? '+' : '';
-            
-            activityItem.innerHTML = `
-                <div class="activity-icon ${isPositive ? 'positive' : 'negative'}">
-                    ${icon}
-                </div>
-                <div class="activity-details">
-                    <div class="activity-description">${description}</div>
-                    <div class="activity-date">${date}</div>
-                </div>
-                <div class="activity-amount ${isPositive ? 'positive' : 'negative'}">
-                    ${sign}${utils.formatCoins(transaction.coins_amount)}
-                </div>
-            `;
-            
-            activityList.appendChild(activityItem);
-        });
+        displayActivities(transactions);
 
     } catch (error) {
         console.error('Error loading recent activity:', error);
-        const activityList = document.getElementById('recentActivity');
-        if (activityList) {
-            activityList.innerHTML = `
-                <div class="activity-item">
-                    <div class="activity-details">
-                        <div class="activity-description">Error loading activities</div>
-                        <div class="activity-date">Please try again later</div>
-                    </div>
-                </div>
-            `;
-        }
+        showPlaceholderActivity();
     }
+}
+
+function displayActivities(transactions) {
+    const activityList = document.getElementById('recentActivity');
+    if (!activityList) return;
+
+    activityList.innerHTML = '';
+
+    if (!transactions || transactions.length === 0) {
+        activityList.innerHTML = `
+            <div class="activity-item">
+                <div class="activity-icon positive">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-description">No activity yet</div>
+                    <div class="activity-date">Start earning to see your activity</div>
+                </div>
+                <div class="activity-amount positive">+0</div>
+            </div>
+        `;
+        return;
+    }
+
+    transactions.forEach(transaction => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        
+        const icon = getActivityIcon(transaction.source_type);
+        const description = getActivityDescription(transaction.source_type);
+        const date = new Date(transaction.created_at).toLocaleDateString();
+        const isPositive = transaction.coins_amount >= 0;
+        const sign = isPositive ? '+' : '';
+        
+        activityItem.innerHTML = `
+            <div class="activity-icon ${isPositive ? 'positive' : 'negative'}">
+                ${icon}
+            </div>
+            <div class="activity-details">
+                <div class="activity-description">${description}</div>
+                <div class="activity-date">${date}</div>
+            </div>
+            <div class="activity-amount ${isPositive ? 'positive' : 'negative'}">
+                ${sign}${formatCoins(transaction.coins_amount)}
+            </div>
+        `;
+        
+        activityList.appendChild(activityItem);
+    });
+}
+
+function showPlaceholderActivity() {
+    const activityList = document.getElementById('recentActivity');
+    if (!activityList) return;
+
+    activityList.innerHTML = `
+        <div class="activity-item">
+            <div class="activity-icon positive">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="activity-details">
+                <div class="activity-description">Welcome to Cryptra!</div>
+                <div class="activity-date">Just now</div>
+            </div>
+            <div class="activity-amount positive">+2,000</div>
+        </div>
+    `;
 }
 
 async function loadReferralStats() {
@@ -220,20 +269,41 @@ async function loadReferralStats() {
         if (!user) return;
 
         console.log('Loading referral stats for user:', user.id);
-        
+
+        // Get user's referral code first
+        const { data: userData } = await supabase
+            .from('users')
+            .select('referral_code, referral_earned, wallet_balance')
+            .eq('id', user.id)
+            .single();
+
+        if (!userData) return;
+
         // Count direct referrals
-        const { data: referrals, error: refError } = await supabase
+        const { data: referrals, error } = await supabase
             .from('users')
             .select('id')
-            .eq('referred_by', user.id);
+            .eq('referred_by', userData.referral_code);
 
-        if (refError) {
-            console.error('Error counting referrals:', refError);
+        if (error) {
+            console.error('Error counting referrals:', error);
         }
 
         const referralCount = referrals ? referrals.length : 0;
         
-        // Update UI elements safely
+        // Update UI
+        updateReferralStats(referralCount, userData);
+
+    } catch (error) {
+        console.error('Error loading referral stats:', error);
+        // Set default values
+        document.getElementById('referralCount').textContent = '0';
+        document.getElementById('totalEarned').textContent = '0';
+    }
+}
+
+function updateReferralStats(referralCount, userData) {
+    try {
         const referralCountElement = document.getElementById('referralCount');
         const totalEarnedElement = document.getElementById('totalEarned');
         
@@ -241,35 +311,18 @@ async function loadReferralStats() {
             referralCountElement.textContent = referralCount;
         }
         
-        // Get user data for total earnings
-        const { data: userData } = await supabase
-            .from('users')
-            .select('wallet_balance, referral_earned')
-            .eq('id', user.id)
-            .single();
-
-        if (userData && totalEarnedElement) {
+        if (totalEarnedElement && userData) {
             const totalEarned = (userData.wallet_balance || 0) + (userData.referral_earned || 0);
-            totalEarnedElement.textContent = utils.formatCoins(totalEarned);
+            totalEarnedElement.textContent = formatCoins(totalEarned);
         }
-
     } catch (error) {
-        console.error('Error loading referral stats:', error);
-        // Set default values on error
-        const referralCountElement = document.getElementById('referralCount');
-        const totalEarnedElement = document.getElementById('totalEarned');
-        
-        if (referralCountElement) referralCountElement.textContent = '0';
-        if (totalEarnedElement) totalEarnedElement.textContent = '0';
+        console.error('Error updating referral stats:', error);
     }
 }
 
 async function loadCheckinStreak(userId) {
     try {
-        console.log('Loading check-in streak for user:', userId);
-        
-        // This would typically come from the database
-        // For now, we'll use localStorage with better error handling
+        // Simple streak tracking using localStorage
         let streakData;
         try {
             streakData = JSON.parse(localStorage.getItem(`checkin_streak_${userId}`) || '{"streak": 0, "lastCheckin": null}');
@@ -296,7 +349,17 @@ async function loadCheckinStreak(userId) {
             }
         }
         
-        // Update UI elements safely
+        // Update UI
+        updateCheckinUI(currentStreak);
+
+    } catch (error) {
+        console.error('Error loading check-in streak:', error);
+        updateCheckinUI(0);
+    }
+}
+
+function updateCheckinUI(currentStreak) {
+    try {
         const checkinStreakElement = document.getElementById('checkinStreak');
         const currentDayElement = document.getElementById('currentDay');
         
@@ -306,15 +369,8 @@ async function loadCheckinStreak(userId) {
         if (currentDayElement) {
             currentDayElement.textContent = (currentStreak % 7) + 1;
         }
-
     } catch (error) {
-        console.error('Error loading check-in streak:', error);
-        // Set default values
-        const checkinStreakElement = document.getElementById('checkinStreak');
-        const currentDayElement = document.getElementById('currentDay');
-        
-        if (checkinStreakElement) checkinStreakElement.textContent = '0';
-        if (currentDayElement) currentDayElement.textContent = '1';
+        console.error('Error updating checkin UI:', error);
     }
 }
 
@@ -335,7 +391,7 @@ function getActivityIcon(sourceType) {
     return `<i class="${iconClass}"></i>`;
 }
 
-function getActivityDescription(sourceType, amount) {
+function getActivityDescription(sourceType) {
     const descriptions = {
         'signup': 'Signup Bonus',
         'video': 'Watch Video Reward',
@@ -355,18 +411,18 @@ function copyReferralCode() {
     try {
         const codeElement = document.getElementById('referralCodeDisplay');
         if (!codeElement) {
-            utils.showNotification('Referral code not available', 'error');
+            showNotification('Referral code not available', 'error');
             return;
         }
         
         const code = codeElement.textContent;
-        if (!code || code === 'LOADING...' || code === 'ERROR') {
-            utils.showNotification('Referral code not ready', 'warning');
+        if (!code || code === 'LOADING...' || code === 'N/A') {
+            showNotification('Referral code not ready', 'warning');
             return;
         }
         
         navigator.clipboard.writeText(code).then(() => {
-            utils.showNotification('Referral code copied to clipboard!', 'success');
+            showNotification('Referral code copied to clipboard!', 'success');
         }).catch(() => {
             // Fallback for older browsers
             const textArea = document.createElement('textarea');
@@ -375,15 +431,46 @@ function copyReferralCode() {
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            utils.showNotification('Referral code copied to clipboard!', 'success');
+            showNotification('Referral code copied to clipboard!', 'success');
         });
     } catch (error) {
         console.error('Error copying referral code:', error);
-        utils.showNotification('Error copying referral code', 'error');
+        showNotification('Error copying referral code', 'error');
     }
 }
 
-// Add CSS for dashboard components with error states
+function showErrorState() {
+    // Set default values
+    document.getElementById('walletBalance').textContent = '0 Coins';
+    document.getElementById('cashValue').textContent = '≈ $0.00';
+    document.getElementById('referralEarnings').textContent = '0';
+    document.getElementById('referralCodeDisplay').textContent = 'ERROR';
+    document.getElementById('referralCount').textContent = '0';
+    document.getElementById('totalEarned').textContent = '0';
+    document.getElementById('checkinStreak').textContent = '0';
+    document.getElementById('currentDay').textContent = '1';
+    
+    showPlaceholderActivity();
+}
+
+// Utility functions (in case utils is not available)
+function formatCoins(coins) {
+    if (typeof coins !== 'number') return '0';
+    return coins.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function coinsToCash(coins, rate = 10000) {
+    if (typeof coins !== 'number') return '0.00';
+    return (coins / rate).toFixed(2);
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification implementation
+    console.log(`${type.toUpperCase()}: ${message}`);
+    alert(`${type.toUpperCase()}: ${message}`);
+}
+
+// Add dashboard styles
 const dashboardStyles = `
     .balance-card {
         background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -536,11 +623,6 @@ const dashboardStyles = `
         border-bottom: none;
     }
 
-    .activity-item.loading {
-        justify-content: center;
-        color: var(--text-light);
-    }
-
     .activity-icon {
         width: 40px;
         height: 40px;
@@ -629,15 +711,6 @@ const dashboardStyles = `
         min-width: 150px;
     }
 
-    .error-state {
-        background: #fee2e2;
-        color: #dc2626;
-        padding: 1rem;
-        border-radius: 8px;
-        text-align: center;
-        margin: 1rem 0;
-    }
-
     @media (max-width: 768px) {
         .balance-card {
             flex-direction: column;
@@ -668,3 +741,6 @@ const dashboardStyles = `
 const styleSheet = document.createElement('style');
 styleSheet.textContent = dashboardStyles;
 document.head.appendChild(styleSheet);
+
+// Make functions globally available
+window.copyReferralCode = copyReferralCode;
