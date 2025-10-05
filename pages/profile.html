@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>My Profile</h1>
+            <p>Manage your account information and KYC verification</p>
+        </div>
+
+        <div class="profile-container">
+            <!-- Profile Overview -->
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-info">
+                        <h2 id="userEmail">Loading...</h2>
+                        <p>Member since <span id="joinDate">...</span></p>
+                    </div>
+                </div>
+                
+                <div class="profile-stats">
+                    <div class="stat">
+                        <h3 id="totalEarnedProfile">0</h3>
+                        <p>Total Earned</p>
+                    </div>
+                    <div class="stat">
+                        <h3 id="totalWithdrawn">0</h3>
+                        <p>Total Withdrawn</p>
+                    </div>
+                    <div class="stat">
+                        <h3 id="successfulWithdrawals">0</h3>
+                        <p>Successful Withdrawals</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="form-section">
+                <h3>Account Information</h3>
+                <form id="profileForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="fullName">Full Name</label>
+                            <input type="text" id="fullName" class="form-input" placeholder="Enter your full name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input type="tel" id="phone" class="form-input" placeholder="+1 234 567 8900">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="address">Address</label>
+                        <textarea id="address" class="form-input" rows="3" placeholder="Enter your address"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Profile
+                    </button>
+                </form>
+            </div>
+
+            <!-- KYC Verification -->
+            <div class="form-section">
+                <h3>KYC Verification</h3>
+                <div class="kyc-status" id="kycStatus">
+                    <div class="status-info">
+                        <i class="fas fa-id-card"></i>
+                        <div>
+                            <h4>Identity Verification</h4>
+                            <p>Verify your identity to increase withdrawal limits</p>
+                        </div>
+                    </div>
+                    <div class="status-badge pending" id="kycBadge">Pending</div>
+                </div>
+
+                <div class="kyc-form" id="kycForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="idType">ID Type</label>
+                            <select id="idType" class="form-input">
+                                <option value="">Select ID Type</option>
+                                <option value="passport">Passport</option>
+                                <option value="driver_license">Driver's License</option>
+                                <option value="national_id">National ID</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="idNumber">ID Number</label>
+                            <input type="text" id="idNumber" class="form-input" placeholder="Enter ID number">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Upload ID Document</label>
+                        <div class="upload-area" id="idUpload">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload or drag and drop</p>
+                            <small>Supported formats: JPG, PNG, PDF (Max 5MB)</small>
+                            <input type="file" id="idDocument" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Selfie with ID</label>
+                        <div class="upload-area" id="selfieUpload">
+                            <i class="fas fa-camera"></i>
+                            <p>Take a selfie holding your ID document</p>
+                            <small>Make sure your face and ID are clearly visible</small>
+                            <input type="file" id="selfiePhoto" accept=".jpg,.jpeg,.png" style="display: none;">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="submitKYC()">
+                        <i class="fas fa-check-circle"></i> Submit for Verification
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="form-section">
+                <h3>Security Settings</h3>
+                <div class="security-options">
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Change Password</h4>
+                            <p>Update your account password</p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="changePassword()">
+                            Change
+                        </button>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Set Security PIN</h4>
+                            <p>4-digit PIN for withdrawals</p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="setSecurityPin()">
+                            Set PIN
+                        </button>
+                    </div>
+                    
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h4>Two-Factor Authentication</h4>
+                            <p>Extra security for your account</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="twoFactor">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="form-section danger-zone">
+                <h3>Danger Zone</h3>
+                <div class="danger-actions">
+                    <button class="btn btn-danger" onclick="deleteAccount()">
+                        <i class="fas fa-trash"></i> Delete Account
+                    </button>
+                    <p>Permanently delete your account and all data. This action cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        async function loadProfileData() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('joinDate').textContent = new Date(user.created_at).toLocaleDateString();
+
+                // Load user profile data
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (userData) {
+                    document.getElementById('totalEarnedProfile').textContent = utils.formatCoins(userData.wallet_balance + userData.referral_earned);
+                    document.getElementById('kycBadge').textContent = userData.kyc_status || 'Pending';
+                    document.getElementById('kycBadge').className = `status-badge ${userData.kyc_status || 'pending'}`;
+                }
+
+                // Load withdrawal stats
+                await loadWithdrawalStats(user.id);
+
+            } catch (error) {
+                console.error('Error loading profile data:', error);
+            }
+        }
+
+        async function loadWithdrawalStats(userId) {
+            const { data: withdrawals } = await supabase
+                .from('withdrawals')
+                .select('amount, status')
+                .eq('user_id', userId);
+
+            if (withdrawals) {
+                const successful = withdrawals.filter(w => w.status === 'paid');
+                const totalWithdrawn = successful.reduce((sum, w) => sum + w.amount, 0);
+                
+                document.getElementById('totalWithdrawn').textContent = '$' + totalWithdrawn;
+                document.getElementById('successfulWithdrawals').textContent = successful.length;
+            }
+        }
+
+        function submitKYC() {
+            utils.showNotification('KYC verification submitted for review', 'success');
+            document.getElementById('kycBadge').textContent = 'Under Review';
+            document.getElementById('kycBadge').className = 'status-badge pending';
+        }
+
+        function changePassword() {
+            const newPassword = prompt('Enter new password:');
+            if (newPassword) {
+                utils.showNotification('Password change functionality would be implemented here', 'info');
+            }
+        }
+
+        function setSecurityPin() {
+            const pin = prompt('Set your 4-digit security PIN:');
+            if (pin && pin.length === 4) {
+                utils.showNotification('Security PIN set successfully', 'success');
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone!')) {
+                utils.showNotification('Account deletion would be processed here', 'warning');
+            }
+        }
+
+        // File upload handling
+        document.getElementById('idUpload').addEventListener('click', () => {
+            document.getElementById('idDocument').click();
+        });
+
+        document.getElementById('selfieUpload').addEventListener('click', () => {
+            document.getElementById('selfiePhoto').click();
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProfileData);
+
+        // Add profile styles
+        const profileStyles = `
+            .profile-container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .profile-card {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+                box-shadow: var(--shadow);
+            }
+
+            .profile-header {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .profile-avatar {
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 2rem;
+            }
+
+            .profile-info h2 {
+                margin-bottom: 0.5rem;
+                color: var(--text);
+            }
+
+            .profile-info p {
+                color: var(--text-light);
+            }
+
+            .profile-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .stat {
+                text-align: center;
+                padding: 1rem;
+                background: var(--background);
+                border-radius: 8px;
+            }
+
+            .stat h3 {
+                font-size: 1.5rem;
+                color: var(--primary);
+                margin-bottom: 0.5rem;
+            }
+
+            .stat p {
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            .form-section {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+                box-shadow: var(--shadow);
+            }
+
+            .form-section h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 0.5rem;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .kyc-status {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1.5rem;
+                background: var(--background);
+                border-radius: 8px;
+                margin-bottom: 1.5rem;
+                border: 1px solid var(--border);
+            }
+
+            .status-info {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .status-info i {
+                font-size: 2rem;
+                color: var(--primary);
+            }
+
+            .status-badge {
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            .status-badge.pending {
+                background: #fef3c7;
+                color: #d97706;
+            }
+
+            .status-badge.verified {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .status-badge.rejected {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
+            .upload-area {
+                border: 2px dashed var(--border);
+                border-radius: 8px;
+                padding: 2rem;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .upload-area:hover {
+                border-color: var(--primary);
+                background: rgba(99, 102, 241, 0.05);
+            }
+
+            .upload-area i {
+                font-size: 2rem;
+                color: var(--primary);
+                margin-bottom: 1rem;
+            }
+
+            .upload-area p {
+                margin-bottom: 0.5rem;
+                color: var(--text);
+            }
+
+            .upload-area small {
+                color: var(--text-light);
+            }
+
+            .security-options {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .security-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                background: var(--background);
+                border-radius: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .security-info h4 {
+                margin-bottom: 0.25rem;
+                color: var(--text);
+            }
+
+            .security-info p {
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 60px;
+                height: 34px;
+            }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 34px;
+            }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 26px;
+                width: 26px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+
+            input:checked + .slider {
+                background-color: var(--primary);
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(26px);
+            }
+
+            .danger-zone {
+                border: 2px solid #ef4444;
+            }
+
+            .danger-zone h3 {
+                color: #ef4444;
+                border-bottom-color: #ef4444;
+            }
+
+            .danger-actions {
+                text-align: center;
+            }
+
+            .btn-danger {
+                background: #ef4444;
+                color: white;
+            }
+
+            .btn-danger:hover {
+                background: #dc2626;
+            }
+
+            .danger-actions p {
+                margin-top: 1rem;
+                color: var(--text-light);
+                font-size: 0.9rem;
+            }
+
+            @media (max-width: 768px) {
+                .form-row {
+                    grid-template-columns: 1fr;
+                }
+
+                .profile-header {
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .kyc-status {
+                    flex-direction: column;
+                    gap: 1rem;
+                    text-align: center;
+                }
+
+                .security-item {
+                    flex-direction: column;
+                    gap: 1rem;
+                    text-align: center;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = profileStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
