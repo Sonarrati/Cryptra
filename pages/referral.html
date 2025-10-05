@@ -6,6 +6,477 @@
     <title>Referral Program - Cryptra</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Referral Section Styles */
+        .referral-stats {
+            margin: 2rem 0;
+        }
+
+        .stat-card.large {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-main h3 {
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-main h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .stat-info h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .referral-share {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .referral-share h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .referral-code-large {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .code-display {
+            font-family: monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            background: var(--background);
+            color: var(--text);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            display: inline-block;
+            border: 2px dashed var(--primary);
+            min-width: 200px;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .referral-link {
+            text-align: center;
+        }
+
+        .referral-link p {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .link-container {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .link-container .form-input {
+            flex: 1;
+        }
+
+        .commission-structure {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .commission-structure h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .level-item {
+            background: var(--background);
+            padding: 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid var(--border);
+            transition: transform 0.3s;
+        }
+
+        .level-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .level-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .level-info h4 {
+            margin-bottom: 0.25rem;
+            color: var(--text);
+        }
+
+        .level-info p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .referral-tree {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .referral-tree h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .tree-container {
+            position: relative;
+        }
+
+        .tree-level {
+            margin-bottom: 2rem;
+        }
+
+        .level-label {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .user-node {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid var(--border);
+            max-width: 300px;
+            margin: 0 auto;
+            transition: all 0.3s;
+        }
+
+        .user-node:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+        }
+
+        .user-node.current-user {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .current-user .user-avatar {
+            background: white;
+            color: var(--primary);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-join-date,
+        .user-earnings {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .user-stats {
+            text-align: right;
+        }
+
+        .user-balance {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .current-user .user-balance {
+            color: white;
+        }
+
+        .level-users {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .empty-level {
+            text-align: center;
+            color: var(--text-light);
+            font-style: italic;
+            padding: 2rem;
+            background: var(--background);
+            border-radius: 8px;
+            border: 1px dashed var(--border);
+            grid-column: 1 / -1;
+        }
+
+        .tree-connector {
+            height: 40px;
+            border-left: 2px solid var(--border);
+            margin: 0 auto;
+            width: 2px;
+        }
+
+        .commission-history {
+            margin: 2rem 0;
+        }
+
+        .commission-history h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .history-filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .commission-list {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .commission-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s;
+        }
+
+        .commission-item:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .commission-item:last-child {
+            border-bottom: none;
+        }
+
+        .commission-item.loading {
+            justify-content: center;
+            color: var(--text-light);
+        }
+
+        .commission-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 1rem;
+        }
+
+        .commission-details {
+            flex: 1;
+        }
+
+        .commission-description {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .commission-date {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .commission-amount {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 1rem 0;
+            border-left: 4px solid #dc2626;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 1rem 0;
+            border-left: 4px solid #10b981;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+
+        .loading-state i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .code-display {
+                font-size: 1.5rem;
+                padding: 0.75rem 1.5rem;
+            }
+
+            .share-buttons {
+                flex-direction: column;
+            }
+
+            .share-buttons .btn {
+                width: 100%;
+            }
+
+            .levels-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .level-users {
+                grid-template-columns: 1fr;
+            }
+
+            .link-container {
+                flex-direction: column;
+            }
+
+            .stat-card.large h1 {
+                font-size: 2rem;
+            }
+
+            .user-node {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .user-stats {
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -16,7 +487,7 @@
             <div class="nav-menu">
                 <a href="dashboard.html" class="nav-link">Dashboard</a>
                 <a href="wallet.html" class="nav-link">Wallet</a>
-                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="referral.html" class="nav-link active">Referral</a>
                 <a href="#" onclick="logout()" class="nav-link">Logout</a>
             </div>
         </div>
@@ -82,7 +553,12 @@
         <div class="referral-share">
             <h2>Your Referral Code</h2>
             <div class="referral-code-large">
-                <div class="code-display" id="userReferralCode">LOADING...</div>
+                <div class="code-display" id="userReferralCode">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading referral code...</p>
+                    </div>
+                </div>
                 <div class="share-buttons">
                     <button class="btn btn-primary" onclick="copyReferralCode()">
                         <i class="fas fa-copy"></i> Copy Code
@@ -96,7 +572,7 @@
             <div class="referral-link">
                 <p>Or share your referral link:</p>
                 <div class="link-container">
-                    <input type="text" id="referralLink" readonly class="form-input">
+                    <input type="text" id="referralLink" readonly class="form-input" placeholder="Loading referral link...">
                     <button class="btn btn-sm" onclick="copyReferralLink()">
                         <i class="fas fa-copy"></i>
                     </button>
@@ -112,42 +588,70 @@
                     <div class="level-number">1</div>
                     <div class="level-info">
                         <h4>Level 1 - Direct Referrals</h4>
-                        <p>5% commission</p>
+                        <p>5% commission on their earnings</p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div class="level-number">2</div>
                     <div class="level-info">
                         <h4>Level 2</h4>
-                        <p>2% commission</p>
+                        <p>2% commission on their earnings</p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div class="level-number">3</div>
                     <div class="level-info">
                         <h4>Level 3</h4>
-                        <p>1% commission</p>
+                        <p>1% commission on their earnings</p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div class="level-number">4</div>
                     <div class="level-info">
                         <h4>Level 4</h4>
-                        <p>0.7% commission</p>
+                        <p>0.7% commission on their earnings</p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div class="level-number">5</div>
                     <div class="level-info">
                         <h4>Level 5</h4>
-                        <p>0.5% commission</p>
+                        <p>0.5% commission on their earnings</p>
                     </div>
                 </div>
                 <div class="level-item">
-                    <div class="level-number">6-10</div>
+                    <div class="level-number">6</div>
                     <div class="level-info">
-                        <h4>Levels 6-10</h4>
-                        <p>0.3% - 0.05% commission</p>
+                        <h4>Level 6</h4>
+                        <p>0.3% commission on their earnings</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">7</div>
+                    <div class="level-info">
+                        <h4>Level 7</h4>
+                        <p>0.2% commission on their earnings</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">8</div>
+                    <div class="level-info">
+                        <h4>Level 8</h4>
+                        <p>0.1% commission on their earnings</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">9</div>
+                    <div class="level-info">
+                        <h4>Level 9</h4>
+                        <p>0.1% commission on their earnings</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">10</div>
+                    <div class="level-info">
+                        <h4>Level 10</h4>
+                        <p>0.05% commission on their earnings</p>
                     </div>
                 </div>
             </div>
@@ -161,7 +665,7 @@
                     <div class="level-label">You</div>
                     <div class="user-node current-user">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <i class="fas fa-crown"></i>
                         </div>
                         <div class="user-info">
                             <div class="user-name">You</div>
@@ -173,9 +677,15 @@
                 <div class="tree-connector"></div>
                 
                 <div class="tree-level">
-                    <div class="level-label">Level 1</div>
+                    <div class="level-label">Level 1 - Direct Referrals</div>
                     <div class="level-users" id="level1Users">
-                        <div class="empty-level">No direct referrals yet</div>
+                        <div class="empty-level">
+                            <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No direct referrals yet</p>
+                            <p class="text-light" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                Share your referral code to start building your network!
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -191,7 +701,55 @@
                 <button class="filter-btn" onclick="filterCommissions('month')">This Month</button>
             </div>
             <div class="commission-list" id="commissionList">
-                <div class="commission-item loading">Loading commission history...</div>
+                <div class="commission-item loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <div class="commission-details">
+                        <div class="commission-description">Loading commission history...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="commission-structure">
+            <h2>How It Works</h2>
+            <div class="levels-grid">
+                <div class="level-item">
+                    <div class="level-number">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <div class="level-info">
+                        <h4>Share Your Code</h4>
+                        <p>Share your unique referral code with friends</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="level-info">
+                        <h4>Friends Sign Up</h4>
+                        <p>Friends use your code when they register</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="level-info">
+                        <h4>Earn Commissions</h4>
+                        <p>Earn lifetime commissions from 10 levels</p>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <div class="level-number">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="level-info">
+                        <h4>Withdraw Earnings</h4>
+                        <p>Convert your coins to real money anytime</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
