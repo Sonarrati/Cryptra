@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw - Cryptra</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2><a href="../index.html" style="text-decoration: none; color: inherit;">Cryptra</a></h2>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="wallet.html" class="nav-link">Wallet</a>
+                <a href="referral.html" class="nav-link">Referral</a>
+                <a href="#" onclick="logout()" class="nav-link">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Withdraw Earnings</h1>
+            <p>Convert your coins to real money via multiple payment methods</p>
+        </div>
+
+        <!-- Balance Overview -->
+        <div class="withdraw-balance">
+            <div class="balance-card">
+                <div class="balance-main">
+                    <h3>Available for Withdrawal</h3>
+                    <h1 id="availableBalance">0 Coins</h1>
+                    <p id="availableCash">≈ $0.00</p>
+                </div>
+                <div class="balance-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Only 1 withdrawal per day is allowed</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Methods -->
+        <div class="withdraw-methods">
+            <h2>Choose Payment Method</h2>
+            <div class="methods-grid">
+                <div class="method-card" data-method="paypal" onclick="selectMethod('paypal')">
+                    <div class="method-icon">
+                        <i class="fab fa-paypal"></i>
+                    </div>
+                    <div class="method-info">
+                        <h3>PayPal</h3>
+                        <p>Minimum: $5 (50,000 coins)</p>
+                        <p>Maximum: $10 (100,000 coins)</p>
+                    </div>
+                    <div class="method-check">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                
+                <div class="method-card" data-method="upi" onclick="selectMethod('upi')">
+                    <div class="method-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="method-info">
+                        <h3>UPI / Paytm</h3>
+                        <p>Minimum: ₹100 (10,000 coins)</p>
+                        <p>Maximum: ₹500 (50,000 coins)</p>
+                    </div>
+                    <div class="method-check">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Form -->
+        <div class="withdraw-form">
+            <h2>Withdrawal Details</h2>
+            <form id="withdrawalForm">
+                <div class="form-group">
+                    <label class="form-label">Selected Method</label>
+                    <div class="selected-method" id="selectedMethod">
+                        No method selected
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="withdrawalAmount">Amount to Withdraw</label>
+                    <div class="amount-input-group">
+                        <span class="currency-symbol" id="currencySymbol">$</span>
+                        <input type="number" id="withdrawalAmount" class="form-input" 
+                               placeholder="Enter amount" min="5" max="10" step="0.01">
+                        <span class="currency-code" id="currencyCode">USD</span>
+                    </div>
+                    <div class="amount-conversion">
+                        <span id="coinsRequired">0 coins required</span>
+                    </div>
+                </div>
+
+                <div class="form-group" id="paypalFields" style="display: none;">
+                    <label class="form-label" for="paypalEmail">PayPal Email</label>
+                    <input type="email" id="paypalEmail" class="form-input" placeholder="your@email.com">
+                </div>
+
+                <div class="form-group" id="upiFields" style="display: none;">
+                    <label class="form-label" for="upiId">UPI ID</label>
+                    <input type="text" id="upiId" class="form-input" placeholder="yourname@upi">
+                    <small class="form-help">Enter your UPI ID (e.g., name@okicici, name@paytm)</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="securityPin">Security PIN</label>
+                    <input type="password" id="securityPin" class="form-input" placeholder="Enter 4-digit PIN" maxlength="4">
+                    <small class="form-help">Set your security PIN in profile settings</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-large" style="width: 100%;">
+                    <i class="fas fa-paper-plane"></i> Request Withdrawal
+                </button>
+            </form>
+        </div>
+
+        <!-- Withdrawal Rules -->
+        <div class="withdraw-rules">
+            <h3>Withdrawal Rules</h3>
+            <div class="rules-list">
+                <div class="rule-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Only 1 withdrawal per user per day</span>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Minimum withdrawal amount applies based on method</span>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Withdrawals are processed within 24-48 hours</span>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Referral commissions are triggered on verified withdrawals</span>
+                </div>
+                <div class="rule-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Admin approval is required for all withdrawals</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal History -->
+        <div class="withdraw-history">
+            <h2>Withdrawal History</h2>
+            <div class="history-table">
+                <div class="table-header">
+                    <div>Date</div>
+                    <div>Amount</div>
+                    <div>Method</div>
+                    <div>Status</div>
+                </div>
+                <div class="table-body" id="withdrawalHistory">
+                    <div class="table-row empty">
+                        <div colspan="4">No withdrawal history</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase-config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let selectedMethod = null;
+        let userBalance = 0;
+        const conversionRate = 10000; // 10,000 coins = $1 / ₹100
+
+        async function loadWithdrawalData() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Get user balance
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('wallet_balance')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+
+                userBalance = userData.wallet_balance;
+                document.getElementById('availableBalance').textContent = utils.formatCoins(userBalance) + ' Coins';
+                document.getElementById('availableCash').textContent = '≈ $' + utils.coinsToCash(userBalance);
+
+                // Load withdrawal history
+                await loadWithdrawalHistory(user.id);
+
+            } catch (error) {
+                console.error('Error loading withdrawal data:', error);
+                utils.showNotification('Error loading withdrawal data', 'error');
+            }
+        }
+
+        function selectMethod(method) {
+            selectedMethod = method;
+            
+            // Update UI
+            document.querySelectorAll('.method-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-method="${method}"]`).classList.add('selected');
+            
+            // Update selected method display
+            const methodNames = {
+                'paypal': 'PayPal',
+                'upi': 'UPI / Paytm'
+            };
+            document.getElementById('selectedMethod').textContent = methodNames[method];
+            
+            // Show/hide form fields
+            document.getElementById('paypalFields').style.display = method === 'paypal' ? 'block' : 'none';
+            document.getElementById('upiFields').style.display = method === 'upi' ? 'block' : 'none';
+            
+            // Update currency and limits
+            if (method === 'paypal') {
+                document.getElementById('currencySymbol').textContent = '$';
+                document.getElementById('currencyCode').textContent = 'USD';
+                document.getElementById('withdrawalAmount').min = 5;
+                document.getElementById('withdrawalAmount').max = 10;
+                document.getElementById('withdrawalAmount').value = '';
+                updateCoinsRequired();
+            } else if (method === 'upi') {
+                document.getElementById('currencySymbol').textContent = '₹';
+                document.getElementById('currencyCode').textContent = 'INR';
+                document.getElementById('withdrawalAmount').min = 100;
+                document.getElementById('withdrawalAmount').max = 500;
+                document.getElementById('withdrawalAmount').value = '';
+                updateCoinsRequired();
+            }
+        }
+
+        function updateCoinsRequired() {
+            const amount = parseFloat(document.getElementById('withdrawalAmount').value) || 0;
+            let coinsRequired = 0;
+            
+            if (selectedMethod === 'paypal') {
+                coinsRequired = amount * conversionRate;
+            } else if (selectedMethod === 'upi') {
+                coinsRequired = amount * (conversionRate / 100); // ₹100 = 10,000 coins
+            }
+            
+            document.getElementById('coinsRequired').textContent = 
+                utils.formatCoins(coinsRequired) + ' coins required';
+        }
+
+        async function loadWithdrawalHistory(userId) {
+            try {
+                const { data: withdrawals, error } = await supabase
+                    .from('withdrawals')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                const historyContainer = document.getElementById('withdrawalHistory');
+                historyContainer.innerHTML = '';
+
+                if (withdrawals.length === 0) {
+                    historyContainer.innerHTML = `
+                        <div class="table-row empty">
+                            <div colspan="4">No withdrawal history</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                withdrawals.forEach(withdrawal => {
+                    const row = document.createElement('div');
+                    row.className = 'table-row';
+                    
+                    const statusClass = `status-${withdrawal.status}`;
+                    const currency = withdrawal.method === 'paypal' ? '$' : '₹';
+                    
+                    row.innerHTML = `
+                        <div>${new Date(withdrawal.created_at).toLocaleDateString()}</div>
+                        <div>${currency}${withdrawal.amount}</div>
+                        <div>${withdrawal.method.toUpperCase()}</div>
+                        <div><span class="status-badge ${statusClass}">${withdrawal.status}</span></div>
+                    `;
+                    
+                    historyContainer.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Error loading withdrawal history:', error);
+            }
+        }
+
+        document.getElementById('withdrawalAmount').addEventListener('input', updateCoinsRequired);
+
+        document.getElementById('withdrawalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!selectedMethod) {
+                utils.showNotification('Please select a withdrawal method', 'error');
+                return;
+            }
+
+            const amount = parseFloat(document.getElementById('withdrawalAmount').value);
+            const securityPin = document.getElementById('securityPin').value;
+            
+            if (!amount || amount <= 0) {
+                utils.showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+
+            // Validate amount limits
+            let coinsRequired = 0;
+            if (selectedMethod === 'paypal') {
+                if (amount < 5 || amount > 10) {
+                    utils.showNotification('PayPal amount must be between $5 and $10', 'error');
+                    return;
+                }
+                coinsRequired = amount * conversionRate;
+            } else if (selectedMethod === 'upi') {
+                if (amount < 100 || amount > 500) {
+                    utils.showNotification('UPI amount must be between ₹100 and ₹500', 'error');
+                    return;
+                }
+                coinsRequired = amount * (conversionRate / 100);
+            }
+
+            // Check balance
+            if (coinsRequired > userBalance) {
+                utils.showNotification('Insufficient balance for this withdrawal', 'error');
+                return;
+            }
+
+            // Validate security PIN (in real app, this would be verified against user record)
+            if (!securityPin || securityPin.length !== 4) {
+                utils.showNotification('Please enter a valid 4-digit security PIN', 'error');
+                return;
+            }
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Check if user has already withdrawn today
+                const today = new Date().toDateString();
+                const { data: todayWithdrawals } = await supabase
+                    .from('withdrawals')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .eq('status', 'pending')
+                    .gte('created_at', new Date().toISOString().split('T')[0]);
+
+                if (todayWithdrawals && todayWithdrawals.length > 0) {
+                    utils.showNotification('You can only make one withdrawal request per day', 'error');
+                    return;
+                }
+
+                // Create withdrawal request
+                const { data: withdrawal, error } = await supabase
+                    .from('withdrawals')
+                    .insert([
+                        {
+                            user_id: user.id,
+                            amount: amount,
+                            coins_used: coinsRequired,
+                            method: selectedMethod,
+                            details: selectedMethod === 'paypal' ? 
+                                document.getElementById('paypalEmail').value :
+                                document.getElementById('upiId').value,
+                            status: 'pending'
+                        }
+                    ])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Deduct coins from user balance
+                const newBalance = userBalance - coinsRequired;
+                await supabase
+                    .from('users')
+                    .update({ wallet_balance: newBalance })
+                    .eq('id', user.id);
+
+                // Record transaction
+                await supabase
+                    .from('coin_transactions')
+                    .insert([
+                        {
+                            user_id: user.id,
+                            source_type: 'withdrawal',
+                            coins_amount: -coinsRequired,
+                            balance_after: newBalance
+                        }
+                    ]);
+
+                utils.showNotification('Withdrawal request submitted successfully!', 'success');
+                
+                // Reset form
+                document.getElementById('withdrawalForm').reset();
+                selectedMethod = null;
+                document.querySelectorAll('.method-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                document.getElementById('selectedMethod').textContent = 'No method selected';
+                document.getElementById('paypalFields').style.display = 'none';
+                document.getElementById('upiFields').style.display = 'none';
+                
+                // Reload data
+                loadWithdrawalData();
+
+            } catch (error) {
+                console.error('Error processing withdrawal:', error);
+                utils.showNotification('Error processing withdrawal request', 'error');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadWithdrawalData);
+
+        // Add withdrawal styles
+        const withdrawStyles = `
+            .withdraw-balance {
+                margin: 2rem 0;
+            }
+
+            .balance-card {
+                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 12px;
+                box-shadow: var(--shadow);
+            }
+
+            .balance-main h3 {
+                opacity: 0.9;
+                margin-bottom: 0.5rem;
+            }
+
+            .balance-main h1 {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .balance-note {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-top: 1rem;
+                opacity: 0.8;
+                font-size: 0.9rem;
+            }
+
+            .withdraw-methods {
+                margin: 3rem 0;
+            }
+
+            .withdraw-methods h2 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .methods-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .method-card {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+                cursor: pointer;
+                transition: all 0.3s;
+                border: 2px solid transparent;
+                box-shadow: var(--shadow);
+            }
+
+            .method-card:hover {
+                transform: translateY(-2px);
+                border-color: var(--primary);
+            }
+
+            .method-card.selected {
+                border-color: var(--primary);
+                background: rgba(99, 102, 241, 0.05);
+            }
+
+            .method-icon {
+                width: 60px;
+                height: 60px;
+                background: var(--primary);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.5rem;
+            }
+
+            .method-info {
+                flex: 1;
+            }
+
+            .method-info h3 {
+                margin-bottom: 0.5rem;
+                color: var(--text);
+            }
+
+            .method-info p {
+                color: var(--text-light);
+                font-size: 0.9rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .method-check {
+                width: 30px;
+                height: 30px;
+                border: 2px solid var(--border);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: transparent;
+                transition: all 0.3s;
+            }
+
+            .method-card.selected .method-check {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: white;
+            }
+
+            .withdraw-form {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                box-shadow: var(--shadow);
+            }
+
+            .withdraw-form h2 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .selected-method {
+                background: var(--background);
+                padding: 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                font-weight: 500;
+                color: var(--text);
+            }
+
+            .amount-input-group {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .currency-symbol {
+                background: var(--background);
+                padding: 0.75rem;
+                border: 1px solid var(--border);
+                border-radius: 8px 0 0 8px;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .amount-input-group .form-input {
+                border-radius: 0;
+                flex: 1;
+            }
+
+            .currency-code {
+                background: var(--background);
+                padding: 0.75rem;
+                border: 1px solid var(--border);
+                border-radius: 0 8px 8px 0;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .amount-conversion {
+                margin-top: 0.5rem;
+                font-size: 0.9rem;
+                color: var(--text-light);
+            }
+
+            .form-help {
+                display: block;
+                margin-top: 0.25rem;
+                color: var(--text-light);
+                font-size: 0.8rem;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+
+            .withdraw-rules {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 8px;
+                margin: 2rem 0;
+                box-shadow: var(--shadow);
+            }
+
+            .withdraw-rules h3 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .rules-list {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .rule-item {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.5rem 0;
+            }
+
+            .rule-item i {
+                color: var(--secondary);
+                font-size: 1.1rem;
+            }
+
+            .withdraw-history {
+                margin: 3rem 0;
+            }
+
+            .withdraw-history h2 {
+                margin-bottom: 1.5rem;
+                color: var(--text);
+            }
+
+            .history-table {
+                background: var(--card-bg);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .table-header {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                padding: 1rem 1.5rem;
+                background: var(--primary);
+                color: white;
+                font-weight: 600;
+            }
+
+            .table-body {
+                padding: 0;
+            }
+
+            .table-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+                align-items: center;
+            }
+
+            .table-row:last-child {
+                border-bottom: none;
+            }
+
+            .table-row.empty {
+                grid-template-columns: 1fr;
+                text-align: center;
+                color: var(--text-light);
+                font-style: italic;
+            }
+
+            .status-badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            .status-pending {
+                background: #fef3c7;
+                color: #d97706;
+            }
+
+            .status-paid {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .status-rejected {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
+            @media (max-width: 768px) {
+                .methods-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .method-card {
+                    flex-direction: column;
+                    text-align: center;
+                }
+
+                .table-header,
+                .table-row {
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.5rem;
+                }
+
+                .table-header div:nth-child(3),
+                .table-row div:nth-child(3),
+                .table-header div:nth-child(4),
+                .table-row div:nth-child(4) {
+                    text-align: right;
+                }
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = withdrawStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
