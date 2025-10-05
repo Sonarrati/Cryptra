@@ -1,106 +1,106 @@
-// Supabase configuration
-const SUPABASE_URL = 'https://niltfnylfjjjriqmxhcu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbHRmbnlsZmpqanJpcW14aGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1OTMzOTEsImV4cCI6MjA3NTE2OTM5MX0.rSyHL8ss8pAErjuYxtCmJ15ouxuKFj5B6MtqYcrWYgg';
-
-// Initialize Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Authentication state listener
-supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && window.location.pathname.includes('login.html')) {
-        window.location.href = 'dashboard.html';
-    } else if (event === 'SIGNED_OUT' && !window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html')) {
-        window.location.href = 'login.html';
-    }
-});
-
-// Utility functions
+// Add these functions to your existing supabase-config.js
 const utils = {
-    // Format coins with commas
-    formatCoins(coins) {
-        return coins.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    // ... existing code ...
+
+    // Enhanced coin adding function
+    async addCoinsToUser(sourceType, coinsAmount) {
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError || !user) {
+                throw new Error('User not authenticated');
+            }
+
+            console.log(`Adding ${coinsAmount} coins for ${sourceType} to user:`, user.id);
+
+            // Get current user balance
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('wallet_balance')
+                .eq('id', user.id)
+                .single();
+
+            if (userError) {
+                console.error('Error fetching user data:', userError);
+                throw userError;
+            }
+
+            if (!userData) {
+                throw new Error('User data not found');
+            }
+
+            const currentBalance = userData.wallet_balance || 0;
+            const newBalance = currentBalance + coinsAmount;
+
+            console.log(`Updating balance from ${currentBalance} to ${newBalance}`);
+
+            // Update user balance
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ wallet_balance: newBalance })
+                .eq('id', user.id);
+
+            if (updateError) {
+                console.error('Error updating balance:', updateError);
+                throw updateError;
+            }
+
+            // Record transaction
+            const { error: transactionError } = await supabase
+                .from('coin_transactions')
+                .insert([
+                    {
+                        user_id: user.id,
+                        source_type: sourceType,
+                        coins_amount: coinsAmount,
+                        balance_after: newBalance,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+
+            if (transactionError) {
+                console.error('Error recording transaction:', transactionError);
+                throw transactionError;
+            }
+
+            console.log('Coins added successfully');
+            return { success: true, newBalance };
+
+        } catch (error) {
+            console.error('Error in addCoinsToUser:', error);
+            throw error;
+        }
     },
 
-    // Calculate cash value from coins
-    coinsToCash(coins, rate = 10000) {
-        return (coins / rate).toFixed(2);
-    },
-
-    // Show notification
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">&times;</button>
-        `;
+    // Check daily limit
+    checkDailyLimit(action, limit) {
+        const today = new Date().toDateString();
+        const actionData = JSON.parse(localStorage.getItem(`daily_${action}`) || '{"date": "", "count": 0}');
         
-        // Add styles if not already added
-        if (!document.querySelector('#notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'notification-styles';
-            styles.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 1rem 1.5rem;
-                    border-radius: 8px;
-                    color: white;
-                    z-index: 10000;
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    max-width: 400px;
-                    animation: slideIn 0.3s ease;
-                }
-                .notification-info { background: #3b82f6; }
-                .notification-success { background: #10b981; }
-                .notification-error { background: #ef4444; }
-                .notification-warning { background: #f59e0b; }
-                .notification button {
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 1.2rem;
-                    cursor: pointer;
-                }
-                @keyframes slideIn {
-                    from { transform: translateX(100%); }
-                    to { transform: translateX(0); }
-                }
-            `;
-            document.head.appendChild(styles);
+        if (actionData.date !== today) {
+            // Reset for new day
+            localStorage.setItem(`daily_${action}`, JSON.stringify({ date: today, count: 0 }));
+            return { canProceed: true, count: 0 };
         }
         
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
+        return { 
+            canProceed: actionData.count < limit, 
+            count: actionData.count 
+        };
     },
 
-    // Generate random number in range
-    randomInRange(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    },
-
-    // Check if user has completed action today
-    hasCompletedToday(action) {
+    // Update daily count
+    updateDailyCount(action) {
         const today = new Date().toDateString();
-        const completed = JSON.parse(localStorage.getItem(`completed_${action}`) || '{}');
-        return completed.date === today;
-    },
-
-    // Mark action as completed today
-    markCompletedToday(action) {
-        const today = new Date().toDateString();
-        const completed = { date: today };
-        localStorage.setItem(`completed_${action}`, JSON.stringify(completed));
+        const actionData = JSON.parse(localStorage.getItem(`daily_${action}`) || '{"date": "", "count": 0}');
+        
+        if (actionData.date !== today) {
+            actionData.date = today;
+            actionData.count = 0;
+        }
+        
+        actionData.count++;
+        localStorage.setItem(`daily_${action}`, JSON.stringify(actionData));
+        return actionData.count;
     }
 };
-
-// Export for use in other files
-window.supabase = supabase;
-window.utils = utils;
