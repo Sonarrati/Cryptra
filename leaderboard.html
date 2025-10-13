@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Leaderboard</div>
+            <div class="header-icon">🏆</div>
+        </div>
+
+        <!-- Time Filters -->
+        <div class="time-filters">
+            <button class="time-filter active" data-period="daily">Today</button>
+            <button class="time-filter" data-period="weekly">This Week</button>
+            <button class="time-filter" data-period="monthly">This Month</button>
+            <button class="time-filter" data-period="alltime">All Time</button>
+        </div>
+
+        <!-- User Rank -->
+        <div class="user-rank-card">
+            <div class="user-rank-info">
+                <div class="user-avatar" id="userRankAvatar">G</div>
+                <div class="user-details">
+                    <div class="user-name" id="userRankName">Guest User</div>
+                    <div class="user-rank">Rank: <span id="userRankPosition">#0</span></div>
+                </div>
+                <div class="user-earnings">
+                    <div class="earnings-amount" id="userRankEarnings">$0.00</div>
+                    <div class="earnings-label">Earnings</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 -->
+        <div class="top-three">
+            <div class="top-user second">
+                <div class="rank-badge">2</div>
+                <div class="user-avatar">SM</div>
+                <div class="user-name">Sarah Miller</div>
+                <div class="user-earnings">$38.75</div>
+            </div>
+            
+            <div class="top-user first">
+                <div class="rank-badge">1</div>
+                <div class="user-avatar">AJ</div>
+                <div class="user-name">Alex Johnson</div>
+                <div class="user-earnings">$45.20</div>
+            </div>
+            
+            <div class="top-user third">
+                <div class="rank-badge">3</div>
+                <div class="user-avatar">RK</div>
+                <div class="user-name">Robert Kim</div>
+                <div class="user-earnings">$32.10</div>
+            </div>
+        </div>
+
+        <!-- Leaderboard List -->
+        <div class="section-header">
+            <div class="section-title">Top Earners</div>
+            <div class="total-users" id="totalUsers">100 users</div>
+        </div>
+        <div class="leaderboard-list" id="leaderboardList">
+            <!-- Leaderboard will be populated by JavaScript -->
+        </div>
+
+        <!-- Statistics -->
+        <div class="section-header">
+            <div class="section-title">Statistics</div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">👥</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="totalActiveUsers">0</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">💰</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="totalPayouts">$0</div>
+                    <div class="stat-label">Total Payouts</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="avgEarnings">$0.00</div>
+                    <div class="stat-label">Avg. Earnings</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">📈</div>
+                <div class="stat-data">
+                    <div class="stat-value" id="growthRate">0%</div>
+                    <div class="stat-label">Growth</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Winners -->
+        <div class="section-header">
+            <div class="section-title">Recent Winners</div>
+            <div class="view-all" onclick="viewAllWinners()">View All</div>
+        </div>
+        <div class="winners-list" id="winnersList">
+            <!-- Recent winners will be populated by JavaScript -->
+        </div>
+
+        <!-- Lucky Draw Info -->
+        <div class="lucky-draw-card">
+            <div class="lucky-draw-header">
+                <h3>🎯 Daily Lucky Draw</h3>
+                <div class="prize-pool">$500 Prize Pool</div>
+            </div>
+            <div class="lucky-draw-info">
+                <div class="draw-detail">
+                    <div class="detail-label">Next Draw:</div>
+                    <div class="detail-value" id="nextDrawTime">Today, 7:00 AM</div>
+                </div>
+                <div class="draw-detail">
+                    <div class="detail-label">Your Entries:</div>
+                    <div class="detail-value" id="userEntries">0</div>
+                </div>
+                <div class="draw-detail">
+                    <div class="detail-label">Entry Cost:</div>
+                    <div class="detail-value">10 Coins</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="joinLuckyDraw()">Join Lucky Draw</button>
+        </div>
+    </div>
+
+    <!-- Lucky Draw Modal -->
+    <div id="luckyDrawModal" class="modal">
+        <div class="modal-content lucky-draw-modal">
+            <div class="modal-header">
+                <h3>Daily Lucky Draw</h3>
+                <span class="close" onclick="closeLuckyDrawModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="lucky-draw-prize">
+                    <div class="prize-amount">$500</div>
+                    <div class="prize-label">Total Prize Pool</div>
+                </div>
+                <div class="lucky-draw-rules">
+                    <h4>How it works:</h4>
+                    <ul>
+                        <li>🎯 Buy entries for 10 coins each</li>
+                        <li>🏆 Top 10 winners share 90% of prize pool</li>
+                        <li>⏰ Daily draw at 7:00 AM</li>
+                        <li>📊 10% platform fee, 90% distributed to winners</li>
+                    </ul>
+                </div>
+                <div class="entry-purchase">
+                    <div class="entry-count">
+                        <button class="count-btn" onclick="decreaseEntries()">-</button>
+                        <span class="entry-number" id="entryCount">1</span>
+                        <button class="count-btn" onclick="increaseEntries()">+</button>
+                    </div>
+                    <div class="entry-cost">
+                        Total Cost: <span id="totalEntryCost">10</span> Coins
+                    </div>
+                    <button class="btn btn-primary btn-large" id="purchaseEntriesBtn">Purchase Entries</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/leaderboard.js"></script>
+</body>
+</html>
