@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Tasks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Earn Coins</div>
+            <div class="header-icon">💰</div>
+        </div>
+
+        <!-- Task Stats -->
+        <div class="task-stats">
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="completedTasks">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="availableTasks">0</div>
+                    <div class="stat-label">Available</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <div class="stat-number" id="totalEarned">$0.00</div>
+                    <div class="stat-label">Earned</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Categories -->
+        <div class="task-categories">
+            <div class="category-tabs">
+                <button class="tab-btn active" data-category="all">All Tasks</button>
+                <button class="tab-btn" data-category="watch">Watch Ads</button>
+                <button class="tab-btn" data-category="scratch">Scratch Cards</button>
+                <button class="tab-btn" data-category="survey">Surveys</button>
+                <button class="tab-btn" data-category="social">Social Media</button>
+            </div>
+        </div>
+
+        <!-- Daily Tasks -->
+        <div class="section-header">
+            <div class="section-title">Daily Tasks</div>
+        </div>
+        <div class="tasks-list" id="dailyTasks">
+            <!-- Daily tasks will be populated by JavaScript -->
+        </div>
+
+        <!-- Watch Ads Section -->
+        <div class="task-section" id="watchAdsSection">
+            <div class="section-header">
+                <div class="section-title">Watch & Earn</div>
+                <div class="task-counter" id="adsCounter">0/20</div>
+            </div>
+            <div class="ads-grid" id="adsGrid">
+                <!-- Ads will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Scratch Cards -->
+        <div class="task-section" id="scratchCardsSection">
+            <div class="section-header">
+                <div class="section-title">Scratch & Win</div>
+                <div class="task-counter" id="scratchCounter">0/3</div>
+            </div>
+            <div class="scratch-cards-grid" id="scratchCardsGrid">
+                <!-- Scratch cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Available Tasks -->
+        <div class="section-header">
+            <div class="section-title">Available Tasks</div>
+        </div>
+        <div class="tasks-list" id="availableTasksList">
+            <!-- Available tasks will be populated by JavaScript -->
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="section-header">
+            <div class="section-title">Completed Tasks</div>
+            <div class="view-all" onclick="viewCompletedTasks()">View All</div>
+        </div>
+        <div class="tasks-list" id="completedTasksList">
+            <!-- Completed tasks will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Ad Watch Modal -->
+    <div id="adModal" class="modal">
+        <div class="modal-content ad-modal">
+            <div class="modal-header">
+                <h3>Watch Ad</h3>
+                <span class="close" onclick="closeAdModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="ad-container" id="adContainer">
+                    <div class="ad-video-placeholder">
+                        <div class="ad-brand">Sponsored Content</div>
+                        <div class="ad-timer">
+                            <div class="timer-circle">
+                                <span id="adTimer">15</span>s
+                            </div>
+                        </div>
+                        <div class="ad-message">Watch this ad to earn coins</div>
+                    </div>
+                </div>
+                <div class="ad-reward">
+                    <div class="reward-amount">Reward: <span id="adReward">$0.00</span></div>
+                    <button class="btn btn-primary" id="claimAdRewardBtn" disabled>Claim Reward</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scratch Card Modal -->
+    <div id="scratchModal" class="modal">
+        <div class="modal-content scratch-modal">
+            <div class="modal-header">
+                <h3>Scratch Card</h3>
+                <span class="close" onclick="closeScratchModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="scratch-card-container">
+                    <canvas id="scratchCanvas" width="300" height="200"></canvas>
+                </div>
+                <div class="scratch-result" id="scratchResult" style="display: none;">
+                    <h3>Congratulations!</h3>
+                    <p>You won: <span id="scratchReward">$0.00</span></p>
+                    <button class="btn btn-primary" onclick="claimScratchReward()">Claim Reward</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content task-modal">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">Task Details</h3>
+                <span class="close" onclick="closeTaskModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="task-detail">
+                    <div class="task-reward">
+                        <span class="reward-label">Reward:</span>
+                        <span class="reward-amount" id="modalTaskReward">$0.00</span>
+                    </div>
+                    <div class="task-description" id="modalTaskDesc">
+                        Task description will appear here.
+                    </div>
+                    <div class="task-instructions" id="modalTaskInstructions">
+                        <h4>Instructions:</h4>
+                        <ol id="instructionsList">
+                            <!-- Instructions will be populated by JavaScript -->
+                        </ol>
+                    </div>
+                    <div class="task-requirements" id="modalTaskRequirements">
+                        <!-- Requirements will be populated by JavaScript -->
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-large" id="startTaskBtn">Start Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item active">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/tasks.js"></script>
+</body>
+</html>
