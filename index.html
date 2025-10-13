@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="app-name">Cryptra</div>
+            <div class="profile-icon" id="userAvatar" onclick="location.href='profile.html'">G</div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="balance-card">
+            <div class="balance-label">Total Balance</div>
+            <div class="balance-amount" id="balanceAmount">$0.00</div>
+            <div class="balance-actions">
+                <button class="btn btn-primary" onclick="location.href='wallet.html'">
+                    <span>Withdraw</span>
+                </button>
+                <button class="btn btn-secondary" onclick="location.href='marketplace.html'">
+                    <span>Marketplace</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Daily Check-in -->
+        <div class="daily-checkin">
+            <div class="checkin-header">
+                <div class="checkin-title">Daily Check-in</div>
+                <div class="streak-count" id="streakCount">0 Day Streak</div>
+            </div>
+            <div class="checkin-calendar" id="checkinCalendar">
+                <!-- Calendar will be populated by JavaScript -->
+            </div>
+            <button class="btn checkin-btn" id="checkinBtn">Check-in Today</button>
+        </div>
+
+        <!-- Earning Methods -->
+        <div class="section-header">
+            <div class="section-title">Earning Methods</div>
+        </div>
+        <div class="earning-methods">
+            <div class="method-card" onclick="location.href='tasks.html?type=ads'">
+                <div class="method-icon watch-ads">▶</div>
+                <div class="method-name">Watch Ads</div>
+                <div class="method-desc" id="adsAvailable">0 ads available</div>
+            </div>
+            <div class="method-card" onclick="location.href='tasks.html?type=scratch'">
+                <div class="method-icon scratch-cards">🎴</div>
+                <div class="method-name">Scratch Cards</div>
+                <div class="method-desc" id="scratchCardsAvailable">0 cards today</div>
+            </div>
+            <div class="method-card" onclick="openTreasureBox()">
+                <div class="method-icon treasure-box">📦</div>
+                <div class="method-name">Treasure Box</div>
+                <div class="method-desc" id="treasureStatus">Available</div>
+            </div>
+            <div class="method-card" onclick="location.href='tasks.html'">
+                <div class="method-icon tasks">📝</div>
+                <div class="method-name">Tasks</div>
+                <div class="method-desc" id="tasksAvailable">0 tasks</div>
+            </div>
+        </div>
+
+        <!-- Referral Commission -->
+        <div class="section-header">
+            <div class="section-title">Referral Commission</div>
+            <div class="view-all" onclick="location.href='referrals.html'">Details</div>
+        </div>
+        <div class="referral-commission">
+            <div class="commission-stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalReferrals">0</div>
+                    <div class="stat-label">Total Referrals</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="activeReferrals">0</div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="commissionToday">$0.00</div>
+                    <div class="stat-label">Earned Today</div>
+                </div>
+            </div>
+            <div class="commission-levels">
+                <div class="level">
+                    <div class="level-value">4.5%</div>
+                    <div class="level-label">Level 1</div>
+                </div>
+                <div class="level">
+                    <div class="level-value">2.0%</div>
+                    <div class="level-label">Level 2</div>
+                </div>
+                <div class="level">
+                    <div class="level-value">1.0%</div>
+                    <div class="level-label">Level 3</div>
+                </div>
+                <div class="level">
+                    <div class="level-value">0.5%</div>
+                    <div class="level-label">Level 4</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Earners -->
+        <div class="section-header">
+            <div class="section-title">Top Earners</div>
+            <div class="view-all" onclick="location.href='leaderboard.html'">View All</div>
+        </div>
+        <div class="top-earners" id="topEarners">
+            <!-- Top earners will be populated by JavaScript -->
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section-header">
+            <div class="section-title">Recent Activity</div>
+            <div class="view-all" onclick="location.href='profile.html'">View All</div>
+        </div>
+        <div class="recent-activity" id="recentActivity">
+            <!-- Recent activities will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <!-- Treasure Box Modal -->
+    <div id="treasureModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Treasure Box</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="treasure-box-animation" id="treasureAnimation">
+                    <div class="box">🎁</div>
+                </div>
+                <div class="reward-display" id="rewardDisplay">
+                    <p>Click to open your daily treasure!</p>
+                    <button class="btn btn-primary" id="openTreasureBtn">Open Treasure</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
