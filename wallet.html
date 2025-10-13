@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Wallet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Wallet</div>
+            <div class="header-icon">💰</div>
+        </div>
+
+        <!-- Balance Overview -->
+        <div class="balance-overview">
+            <div class="balance-card-large">
+                <div class="balance-label">Available Balance</div>
+                <div class="balance-amount-large" id="availableBalance">$0.00</div>
+                <div class="balance-details">
+                    <div class="balance-detail">
+                        <span class="detail-label">Total Earned:</span>
+                        <span class="detail-value" id="totalEarned">$0.00</span>
+                    </div>
+                    <div class="balance-detail">
+                        <span class="detail-label">Total Withdrawn:</span>
+                        <span class="detail-value" id="totalWithdrawn">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header">
+            <div class="section-title">Quick Actions</div>
+        </div>
+        <div class="wallet-actions">
+            <button class="wallet-action-btn" onclick="showWithdrawModal()">
+                <div class="action-icon">💸</div>
+                <div class="action-text">Withdraw</div>
+            </button>
+            <button class="wallet-action-btn" onclick="location.href='marketplace.html'">
+                <div class="action-icon">🛒</div>
+                <div class="action-text">Marketplace</div>
+            </button>
+            <button class="wallet-action-btn" onclick="showAddCoinsModal()">
+                <div class="action-icon">➕</div>
+                <div class="action-text">Add Coins</div>
+            </button>
+            <button class="wallet-action-btn" onclick="showTransactionHistory()">
+                <div class="action-icon">📊</div>
+                <div class="action-text">History</div>
+            </button>
+        </div>
+
+        <!-- Withdrawal Methods -->
+        <div class="section-header">
+            <div class="section-title">Withdrawal Methods</div>
+        </div>
+        <div class="withdrawal-methods">
+            <div class="method-card" onclick="selectWithdrawalMethod('upi')">
+                <div class="method-icon">🇮🇳</div>
+                <div class="method-info">
+                    <div class="method-name">UPI</div>
+                    <div class="method-desc">Instant withdrawal to UPI ID</div>
+                </div>
+                <div class="method-radio">
+                    <input type="radio" name="withdrawalMethod" id="upiMethod" checked>
+                </div>
+            </div>
+            <div class="method-card" onclick="selectWithdrawalMethod('paypal')">
+                <div class="method-icon">🌍</div>
+                <div class="method-info">
+                    <div class="method-name">PayPal</div>
+                    <div class="method-desc">International withdrawals</div>
+                </div>
+                <div class="method-radio">
+                    <input type="radio" name="withdrawalMethod" id="paypalMethod">
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Limits -->
+        <div class="limits-card">
+            <div class="limits-header">Withdrawal Limits</div>
+            <div class="limits-list">
+                <div class="limit-item">
+                    <div class="limit-label">Minimum Withdrawal</div>
+                    <div class="limit-value">$3.00</div>
+                </div>
+                <div class="limit-item">
+                    <div class="limit-label">Maximum Daily</div>
+                    <div class="limit-value">$5.00</div>
+                </div>
+                <div class="limit-item">
+                    <div class="limit-label">Withdrawals Per Day</div>
+                    <div class="limit-value">1</div>
+                </div>
+                <div class="limit-item">
+                    <div class="limit-label">Processing Time</div>
+                    <div class="limit-value">24-48 hours</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section-header">
+            <div class="section-title">Recent Transactions</div>
+            <div class="view-all" onclick="viewAllTransactions()">View All</div>
+        </div>
+        <div class="transactions-list" id="transactionsList">
+            <!-- Transactions will be populated by JavaScript -->
+            <div class="empty-state">
+                <div class="empty-icon">💸</div>
+                <div class="empty-text">No transactions yet</div>
+                <div class="empty-desc">Your transactions will appear here</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdrawal Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Withdraw Funds</h3>
+                <span class="close" onclick="closeWithdrawModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="withdraw-form">
+                    <div class="form-group">
+                        <label for="withdrawAmount">Amount ($)</label>
+                        <input type="number" id="withdrawAmount" min="3" max="5" step="0.01" placeholder="3.00">
+                        <div class="amount-hint">Min: $3.00, Max: $5.00</div>
+                    </div>
+                    
+                    <div class="form-group" id="upiField" style="display: block;">
+                        <label for="upiId">UPI ID</label>
+                        <input type="text" id="upiId" placeholder="yourname@upi">
+                    </div>
+                    
+                    <div class="form-group" id="paypalField" style="display: none;">
+                        <label for="paypalEmail">PayPal Email</label>
+                        <input type="email" id="paypalEmail" placeholder="your@email.com">
+                    </div>
+                    
+                    <div class="withdraw-summary">
+                        <div class="summary-item">
+                            <span>Amount:</span>
+                            <span id="summaryAmount">$0.00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>Fee:</span>
+                            <span id="summaryFee">$0.00</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span>You'll receive:</span>
+                            <span id="summaryTotal">$0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-large" id="confirmWithdrawBtn">Confirm Withdrawal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Coins Modal -->
+    <div id="addCoinsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Coins</h3>
+                <span class="close" onclick="closeAddCoinsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="coins-options">
+                    <div class="coins-option" onclick="selectCoinAmount(100)">
+                        <div class="coins-amount">100 Coins</div>
+                        <div class="coins-price">$1.00</div>
+                    </div>
+                    <div class="coins-option" onclick="selectCoinAmount(500)">
+                        <div class="coins-amount">500 Coins</div>
+                        <div class="coins-price">$4.50</div>
+                    </div>
+                    <div class="coins-option" onclick="selectCoinAmount(1000)">
+                        <div class="coins-amount">1000 Coins</div>
+                        <div class="coins-price">$8.00</div>
+                    </div>
+                    <div class="coins-option" onclick="selectCoinAmount(5000)">
+                        <div class="coins-amount">5000 Coins</div>
+                        <div class="coins-price">$35.00</div>
+                    </div>
+                </div>
+                <div class="custom-amount">
+                    <label for="customCoins">Custom Amount</label>
+                    <input type="number" id="customCoins" placeholder="Enter coin amount">
+                </div>
+                <button class="btn btn-primary btn-large" id="purchaseCoinsBtn">Purchase Coins</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/wallet.js"></script>
+</body>
+</html>
