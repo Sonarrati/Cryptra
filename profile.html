@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Profile</div>
+            <div class="profile-icon" id="userAvatar">G</div>
+        </div>
+
+        <!-- Profile Info -->
+        <div class="profile-section">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileAvatar">G</div>
+                <div class="profile-info">
+                    <h2 id="userName">Guest User</h2>
+                    <p id="userEmail">guest@example.com</p>
+                    <div class="member-since">Member since <span id="memberSince">2024</span></div>
+                </div>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalEarnings">$0.00</div>
+                    <div class="stat-label">Total Earnings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalWithdrawn">$0.00</div>
+                    <div class="stat-label">Withdrawn</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="referralCount">0</div>
+                    <div class="stat-label">Referrals</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referral Code -->
+        <div class="section-header">
+            <div class="section-title">Your Referral Code</div>
+        </div>
+        <div class="referral-code-card">
+            <div class="referral-code" id="referralCode">CRYP1234</div>
+            <button class="btn btn-primary" id="copyReferralBtn">Copy Code</button>
+            <div class="referral-info">
+                <p>Share this code with friends and earn 4.5% commission on their earnings!</p>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="section-header">
+            <div class="section-title">Settings</div>
+        </div>
+        <div class="settings-list">
+            <div class="setting-item" onclick="location.href='wallet.html'">
+                <div class="setting-icon">💰</div>
+                <div class="setting-info">
+                    <div class="setting-title">Wallet & Withdrawal</div>
+                    <div class="setting-desc">Manage your balance and withdrawals</div>
+                </div>
+                <div class="setting-arrow">→</div>
+            </div>
+            
+            <div class="setting-item" onclick="showNotificationsSettings()">
+                <div class="setting-icon">🔔</div>
+                <div class="setting-info">
+                    <div class="setting-title">Notifications</div>
+                    <div class="setting-desc">Manage your notification preferences</div>
+                </div>
+                <div class="setting-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="notificationsToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="setting-item" onclick="showPrivacySettings()">
+                <div class="setting-icon">🔒</div>
+                <div class="setting-info">
+                    <div class="setting-title">Privacy & Security</div>
+                    <div class="setting-desc">Control your privacy settings</div>
+                </div>
+                <div class="setting-arrow">→</div>
+            </div>
+            
+            <div class="setting-item" onclick="showHelp()">
+                <div class="setting-icon">❓</div>
+                <div class="setting-info">
+                    <div class="setting-title">Help & Support</div>
+                    <div class="setting-desc">FAQ and contact support</div>
+                </div>
+                <div class="setting-arrow">→</div>
+            </div>
+            
+            <div class="setting-item" onclick="showAbout()">
+                <div class="setting-icon">ℹ️</div>
+                <div class="setting-info">
+                    <div class="setting-title">About Cryptra</div>
+                    <div class="setting-desc">Version 1.0.0</div>
+                </div>
+                <div class="setting-arrow">→</div>
+            </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="logout-section">
+            <button class="btn btn-logout" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/profile.js"></script>
+</body>
+</html>
