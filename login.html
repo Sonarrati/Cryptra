@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">Cryptra</div>
+            <h2 class="login-title">Welcome Back</h2>
+            <p class="login-subtitle">Sign in to continue earning</p>
+            
+            <button class="google-login-btn" id="googleLogin">
+                <span class="google-icon">🔍</span>
+                Sign in with Google
+            </button>
+            
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <p style="color: #6b7280; font-size: 0.875rem;">
+                    By signing in, you agree to our Terms of Service and Privacy Policy
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>
