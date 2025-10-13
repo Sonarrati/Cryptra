@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Marketplace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Marketplace</div>
+            <div class="header-icon">🛒</div>
+        </div>
+
+        <!-- Balance Bar -->
+        <div class="balance-bar">
+            <div class="balance-info">
+                <div class="balance-label">Your Coins</div>
+                <div class="balance-amount" id="coinBalance">0</div>
+            </div>
+            <button class="btn btn-small" onclick="location.href='wallet.html'">Add Coins</button>
+        </div>
+
+        <!-- Categories -->
+        <div class="categories-section">
+            <div class="categories-header">Categories</div>
+            <div class="categories-list">
+                <button class="category-btn active" data-category="all">All</button>
+                <button class="category-btn" data-category="giftcards">Gift Cards</button>
+                <button class="category-btn" data-category="electronics">Electronics</button>
+                <button class="category-btn" data-category="vouchers">Vouchers</button>
+                <button class="category-btn" data-category="premium">Premium</button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" id="productSearch" placeholder="Search products...">
+            <div class="search-icon">🔍</div>
+        </div>
+
+        <!-- Featured Products -->
+        <div class="section-header">
+            <div class="section-title">Featured Products</div>
+            <div class="view-all" onclick="viewAllProducts()">View All</div>
+        </div>
+        <div class="products-grid" id="featuredProducts">
+            <!-- Featured products will be populated by JavaScript -->
+        </div>
+
+        <!-- All Products -->
+        <div class="section-header">
+            <div class="section-title">All Products</div>
+        </div>
+        <div class="products-grid" id="allProducts">
+            <!-- All products will be populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyProducts" style="display: none;">
+            <div class="empty-icon">🛒</div>
+            <div class="empty-text">No products found</div>
+            <div class="empty-desc">Try changing your search or filter</div>
+        </div>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content product-modal">
+            <div class="modal-header">
+                <h3 id="productModalTitle">Product Details</h3>
+                <span class="close" onclick="closeProductModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="product-detail">
+                    <div class="product-image" id="productModalImage">
+                        <img src="" alt="Product" id="modalProductImg">
+                    </div>
+                    <div class="product-info">
+                        <h2 id="modalProductName">Product Name</h2>
+                        <div class="product-price" id="modalProductPrice">0 Coins</div>
+                        <div class="product-description" id="modalProductDesc">
+                            Product description will appear here.
+                        </div>
+                        <div class="product-stock">
+                            <span class="stock-label">Stock:</span>
+                            <span class="stock-value" id="modalProductStock">10 available</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="purchase-section">
+                    <div class="quantity-selector">
+                        <button class="quantity-btn" onclick="decreaseQuantity()">-</button>
+                        <span class="quantity-value" id="productQuantity">1</span>
+                        <button class="quantity-btn" onclick="increaseQuantity()">+</button>
+                    </div>
+                    <button class="btn btn-primary btn-large" id="purchaseProductBtn">Purchase Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Your Cart</h3>
+            <span class="close" onclick="closeCart()">&times;</span>
+        </div>
+        <div class="sidebar-body">
+            <div class="cart-items" id="cartItems">
+                <!-- Cart items will be populated by JavaScript -->
+                <div class="empty-cart">
+                    <div class="empty-icon">🛒</div>
+                    <div class="empty-text">Your cart is empty</div>
+                </div>
+            </div>
+            <div class="cart-summary">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span id="cartTotalAmount">0 Coins</span>
+                </div>
+                <button class="btn btn-primary btn-large" id="checkoutBtn">Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Button -->
+    <div class="cart-button" onclick="openCart()">
+        <div class="cart-icon">🛒</div>
+        <div class="cart-count" id="cartCount">0</div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item active">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/marketplace.js"></script>
+</body>
+</html>
