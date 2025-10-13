@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptra - Referrals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="back-button" onclick="location.href='index.html'">←</div>
+            <div class="app-name">Referrals</div>
+            <div class="header-icon">👥</div>
+        </div>
+
+        <!-- Referral Stats -->
+        <div class="referral-stats-card">
+            <div class="stat-row">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalReferrals">0</div>
+                    <div class="stat-text">Total Referrals</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeReferrals">0</div>
+                    <div class="stat-text">Active</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCommission">$0.00</div>
+                    <div class="stat-text">Total Commission</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Referral -->
+        <div class="section-header">
+            <div class="section-title">Invite Friends</div>
+        </div>
+        <div class="share-referral-card">
+            <div class="referral-share-box">
+                <div class="referral-url" id="referralUrl">https://cryptra.com/join/CRYP1234</div>
+                <button class="btn btn-copy" id="copyUrlBtn">Copy</button>
+            </div>
+            <div class="share-buttons">
+                <button class="share-btn whatsapp" onclick="shareViaWhatsApp()">
+                    <div class="share-icon">📱</div>
+                    <div class="share-text">WhatsApp</div>
+                </button>
+                <button class="share-btn telegram" onclick="shareViaTelegram()">
+                    <div class="share-icon">✈️</div>
+                    <div class="share-text">Telegram</div>
+                </button>
+                <button class="share-btn more" onclick="showMoreShareOptions()">
+                    <div class="share-icon">📤</div>
+                    <div class="share-text">More</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Commission Structure -->
+        <div class="section-header">
+            <div class="section-title">Commission Structure</div>
+        </div>
+        <div class="commission-structure">
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 1</div>
+                    <div class="level-desc">Direct Referrals</div>
+                </div>
+                <div class="level-percentage">4.5%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 2</div>
+                    <div class="level-desc">Friends of Friends</div>
+                </div>
+                <div class="level-percentage">2.0%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 3</div>
+                    <div class="level-desc">3rd Level</div>
+                </div>
+                <div class="level-percentage">1.0%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 4</div>
+                    <div class="level-desc">4th Level</div>
+                </div>
+                <div class="level-percentage">0.5%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 5</div>
+                    <div class="level-desc">5th Level</div>
+                </div>
+                <div class="level-percentage">0.25%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 6</div>
+                    <div class="level-desc">6th Level</div>
+                </div>
+                <div class="level-percentage">0.1%</div>
+            </div>
+            <div class="commission-level">
+                <div class="level-info">
+                    <div class="level-number">Level 7</div>
+                    <div class="level-desc">7th Level</div>
+                </div>
+                <div class="level-percentage">0.05%</div>
+            </div>
+        </div>
+
+        <!-- Referral List -->
+        <div class="section-header">
+            <div class="section-title">Your Referrals</div>
+            <div class="view-all" onclick="viewAllReferrals()">View All</div>
+        </div>
+        <div class="referral-list" id="referralList">
+            <!-- Referrals will be populated by JavaScript -->
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <div class="empty-text">No referrals yet</div>
+                <div class="empty-desc">Share your referral code to start earning commissions</div>
+            </div>
+        </div>
+
+        <!-- Commission History -->
+        <div class="section-header">
+            <div class="section-title">Commission History</div>
+            <div class="view-all" onclick="viewCommissionHistory()">View All</div>
+        </div>
+        <div class="commission-history" id="commissionHistory">
+            <!-- Commission history will be populated by JavaScript -->
+            <div class="empty-state">
+                <div class="empty-icon">💰</div>
+                <div class="empty-text">No commission history</div>
+                <div class="empty-desc">Commission will appear here when your referrals are active</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="tasks.html" class="nav-item">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Earn</div>
+        </a>
+        <a href="referrals.html" class="nav-item active">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Referrals</div>
+        </a>
+        <a href="marketplace.html" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-label">Market</div>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Profile</div>
+        </a>
+    </div>
+
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/referrals.js"></script>
+</body>
+</html>
